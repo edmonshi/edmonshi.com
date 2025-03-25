@@ -3,7 +3,8 @@
 .App {
   font-family: "Open Sans", sans-serif;
   color: white;
-  max-width: auto;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 header {
@@ -12,10 +13,10 @@ header {
   justify-content: space-between;
   position: fixed;
   width: 100%;
-  padding-top: 20px;
-  padding-bottom: 10px;
-  padding-left: 100px;
-  padding-right: 100px;
+  padding: 10px 5%;
+  box-sizing: border-box;
+  background-color: black;
+  z-index: 1000;
 }
 
 #logo {
@@ -25,6 +26,7 @@ header {
 nav {
   width: 300px;
 }
+
 nav a {
   margin: 0 10px;
   text-decoration: none;
@@ -40,61 +42,117 @@ nav a:hover {
   margin-bottom: 300px;
   text-align: center;
 }
+
 #contact {
   margin-top: 70px;
   text-align: center;
-  padding-left: 800px;
-  padding-right: 800px;
+  padding: 0 5%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
 }
 
 .contact-logo {
-  width: 50px;
-  transition: opacity 1s ease-in;
-  opacity: 0;
-}
-#greeting {
-  font-size: 50px;
-  margin-bottom: 80px;
-  transition: opacity 1s ease-in;
-  opacity: 0;
-}
-#intro {
-  font-size: 100px;
-  margin-bottom: 80px;
-  transition: opacity 1s ease-in;
-  opacity: 0;
-}
-#subtitle {
+  width: 40px;
   transition: opacity 1s ease-in;
   opacity: 0;
 }
 
-#about {
-  text-align: justify;
-  padding-left: 100px;
-  padding-right: 100px;
+#greeting {
+  font-size: clamp(20px, 3vw, 50px);
+  margin-bottom: 80px;
+  transition: opacity 1s ease-in;
+  opacity: 0;
 }
+
+#intro {
+  font-size: clamp(40px, 6vw, 100px);
+  margin-bottom: 80px;
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+
+#subtitle {
+  font-size: clamp(20px, 2vw, 50px);
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+
+#aboutsection {
+  text-align: justify;
+  padding: 0 5%;
+}
+
 #aboutme {
   margin-top: 30px;
   display: flex;
+  flex-wrap: nowrap;
+  gap: 30px;
 }
+
 #aboutme h4 {
+  font-size: clamp(10px, 1vw, 20px);
   padding-right: 50px;
   line-height: 35px;
-  font-size: 20px;
 }
 
 #headshot {
-  width: 500px;
-  height: 500px;
-
+  width: 400px;
+  height: 400px;
   margin-right: 50px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 footer {
   text-align: center;
   margin-top: 20px;
   color: #666;
+}
+
+/* Media Queries */
+@media screen and (max-width: 768px) {
+  header {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 20px;
+  }
+
+  nav {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  #home {
+    padding-top: 150px;
+    margin-bottom: 150px;
+  }
+
+  #aboutme {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #aboutme h4 {
+    padding-right: 0;
+  }
+
+  #headshot {
+    margin-right: 0;
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  nav a {
+    margin: 0 5px;
+    font-size: 14px;
+  }
+  
+  #contact {
+    padding: 0 20px;
+  }
 }

@@ -58,7 +58,7 @@ const App: React.FC = () => {
             </a>
           </div>
         </section>
-        <section id="about">
+        <section id="aboutsection">
           <h1>About Me</h1>
           <div id="aboutme">
             <h4>
