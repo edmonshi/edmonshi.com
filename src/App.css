@@ -1,0 +1,100 @@
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:700");
+
+.App {
+  font-family: "Open Sans", sans-serif;
+  color: white;
+  max-width: auto;
+}
+
+header {
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  position: fixed;
+  width: 100%;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  padding-left: 100px;
+  padding-right: 100px;
+}
+
+#logo {
+  width: 60px;
+}
+
+nav {
+  width: 300px;
+}
+nav a {
+  margin: 0 10px;
+  text-decoration: none;
+  color: white;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+#home {
+  padding-top: 250px;
+  margin-bottom: 300px;
+  text-align: center;
+}
+#contact {
+  margin-top: 70px;
+  text-align: center;
+  padding-left: 800px;
+  padding-right: 800px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.contact-logo {
+  width: 50px;
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+#greeting {
+  font-size: 50px;
+  margin-bottom: 80px;
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+#intro {
+  font-size: 100px;
+  margin-bottom: 80px;
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+#subtitle {
+  transition: opacity 1s ease-in;
+  opacity: 0;
+}
+
+#about {
+  text-align: justify;
+  padding-left: 100px;
+  padding-right: 100px;
+}
+#aboutme {
+  margin-top: 30px;
+  display: flex;
+}
+#aboutme h4 {
+  padding-right: 50px;
+  line-height: 35px;
+  font-size: 20px;
+}
+
+#headshot {
+  width: 500px;
+  height: 500px;
+
+  margin-right: 50px;
+}
+
+footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+}
