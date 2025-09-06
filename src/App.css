@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css?family=Open+Sans:700");
 
+body {
+  background: linear-gradient(rgba(0, 0, 0, 1), rgb(45, 45, 45));
+}
+
 .App {
   font-family: "Open Sans", sans-serif;
   color: white;
@@ -7,20 +11,31 @@
   overflow-x: hidden;
 }
 
+main {
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+#particle-canvas {
+  width: 100%;
+  height: 100%;
+}
+
 header {
-  text-align: center;
-  display: flex;
   justify-content: space-between;
-  position: fixed;
+  align-items: center;
   width: 100%;
   padding: 10px 5%;
+  display: flex;
+  position: fixed;
   box-sizing: border-box;
   background-color: black;
   z-index: 1000;
 }
 
 #logo {
-  width: 60px;
+  width: 100px;
+  height: 100px;
 }
 
 nav {
@@ -30,16 +45,18 @@ nav {
 nav a {
   margin: 0 10px;
   text-decoration: none;
+  font-size: clamp(10px, 2vw, 20px);
   color: white;
 }
 
 nav a:hover {
   text-decoration: underline;
+  cursor: pointer;
 }
 
 #home {
-  padding-top: 250px;
-  margin-bottom: 300px;
+  padding-top: 13%;
+  margin-bottom: 20%;
   text-align: center;
 }
 
@@ -54,9 +71,18 @@ nav a:hover {
 }
 
 .contact-logo {
-  width: 40px;
-  transition: opacity 1s ease-in;
+  width: clamp(20px, 4vw, 50px);
+  height: clamp(20px, 4vw, 50px);
+  fill: grey;
+  fill-opacity: 1;
+  transition: opacity 1s ease-in, fill 0.3s ease, transform 0.3s ease;
   opacity: 0;
+}
+
+.contact-logo:hover {
+  fill: white;
+  transform: scale(1.2);
+  cursor: pointer;
 }
 
 #greeting {
@@ -79,80 +105,239 @@ nav a:hover {
   opacity: 0;
 }
 
-#aboutsection {
+#about {
   text-align: justify;
   padding: 0 5%;
+  margin-bottom: 10%;
+  transform: translateX(-30%);
+  opacity: 0;
+  transition: transform 0.8s ease-out, opacity 1s ease-in;
+}
+
+#about.slide-in-from-left {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+#about h1 {
+  padding-top: 70px;
 }
 
 #aboutme {
   margin-top: 30px;
   display: flex;
   flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
   gap: 30px;
 }
 
 #aboutme h4 {
-  font-size: clamp(10px, 1vw, 20px);
+  font-size: clamp(15px, 4vw, 20px);
   padding-right: 50px;
-  line-height: 35px;
+  line-height: 40px;
+  max-width: 1100px;
 }
 
 #headshot {
-  width: 400px;
-  height: 400px;
-  margin-right: 50px;
-  max-width: 100%;
+  width: clamp(300px, 12vw, 400px);
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+#skills-bar {
+  margin: 0 auto 0 auto;
+  width: 90%;
+  overflow: hidden;
+  background: linear-gradient(90deg, 
+    rgba(0,0,0,0.8) 0%, 
+    rgba(0,0,0,0.1) 20%, 
+    rgba(0,0,0,0.1) 80%, 
+    rgba(0,0,0,0.8) 100%);
+  padding: 20px 0;
+  border-radius: 8px;
+  margin-bottom: 5%;
+}
+
+.skills-scroll {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+}
+
+.skills-track {
+  display: flex;
+  animation: scroll-skills 30s linear infinite;
+  width: fit-content;
+}
+
+.skill-item {
+  background: linear-gradient(135deg, #333, #555);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid #666;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+  margin-right: 20px;
+}
+
+@keyframes scroll-skills {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+#portfolio {
+  align-content: center;
+  padding: 0 5%;
+}
+
+#portfolio h1 {
+  padding-top: 70px;
+}
+
+#projects {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+}
+
+.project-panel {
+  width: clamp(700px, 25vw, 500px);
+
+  display: flex;
+  flex-direction: column;
+
+  background-color: black;
+  border-radius: 10px;
+
+  margin-bottom: 50px;
+  
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  transition: all 0.2s ease-in;
+}
+.project-panel:hover {
+  box-shadow: 0 0 20px rgb(0, 0, 0, 0.7);
+  transform: scale(1.02);
+  cursor: pointer;
+}
+
+.project-panel a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-panel .panel-content {
+  padding: 2% 1% 0 1%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+}
+
+.project-panel .panel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.project-panel .tech-tag {
+  background-color: #333;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #555;
+  transition: all 0.2s ease;
+}
+
+.project-panel .tech-tag:hover {
+  transform: translateY(-2px);
+}
+
+.project-panel .panel-description {
+  padding-left: 2%;
+  padding-right: 2%;
+  font-size: 13px;
+  text-align: center;
+}
+
+.project-panel .panel-media {
+  width: 100%;
   height: auto;
-  object-fit: contain;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  
+}
+
+.project-panel .panel-media img, 
+.project-panel .panel-media video {
+  width: 100%;
+  height: auto;
 }
 
 footer {
   text-align: center;
-  margin-top: 20px;
-  color: #666;
+  padding: 40px 0;
+  margin-top: 50px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #ccc;
+  font-size: 14px;
+  border-top: 1px solid #333;
 }
 
-/* Media Queries */
+footer p {
+  margin: 0;
+  font-weight: 300;
+}
+
 @media screen and (max-width: 768px) {
-  header {
-    flex-direction: row;
-    align-items: center;
-    padding: 10px 20px;
-  }
-
-  nav {
-    width: 100%;
-    margin-top: 20px;
-  }
-
   #home {
-    padding-top: 150px;
-    margin-bottom: 150px;
+    padding-top: 50%;
   }
 
   #aboutme {
     flex-direction: column;
-    align-items: center;
+    text-align: center;
   }
 
   #aboutme h4 {
     padding-right: 0;
   }
 
-  #headshot {
-    margin-right: 0;
-    width: 100%;
-    max-width: 200px;
+  .project-panel {
+    width: 95%;
+    height: auto;
   }
-}
 
-@media screen and (max-width: 480px) {
-  nav a {
-    margin: 0 5px;
-    font-size: 14px;
+  nav {
+    width: auto;
+    justify-content: space-evenly;
+    font-size: 10px;
   }
-  
-  #contact {
-    padding: 0 20px;
+
+  header {
+    padding: 0px 5%;
+  }
+
+  #logo {
+    width: 10px;
+    height: 10px;
   }
 }

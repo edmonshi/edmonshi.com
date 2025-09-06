@@ -8,7 +8,11 @@ function NavBar({sections}: NavBarProps) {
   return (
     <nav>
       {sections.map((e) => (
-        <a href={"#"+e} key={e}>{e.charAt(0).toUpperCase()+e.substring(1)}</a>
+        <a key={e}
+        onClick={() => {
+              document.getElementById(e)?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            >{e.charAt(0).toUpperCase()+e.substring(1)}</a>
       ))}
     </nav>
   )
