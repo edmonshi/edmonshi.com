@@ -8,6 +8,7 @@ interface ProjectPanelProps {
     description: string;
     projectUrl: string;
     tags?: string[];
+    icon?: React.ReactNode;
 }
 
 const ProjectPanel: React.FC<ProjectPanelProps> = ({
@@ -18,6 +19,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
     description,
     projectUrl,
     tags,
+    icon,
 }) => {
     return (
         <div className={className}>
@@ -28,7 +30,10 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
             >
                 <div className="panel-content">
                     <div className="panel-header">
-                        <h3 className="panel-name">{title}</h3>
+                        <h3 className="panel-name">
+                            {icon}
+                            {title}
+                        </h3>
                         {tags && tags.length > 0 && (
                             <div className="panel-tags">
                                 {tags.map((tag, index) => (
