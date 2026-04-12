@@ -410,6 +410,11 @@ footer {
   margin-top: 20px;
 }
 
+#cta-button {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
 .primary-button:hover {
   background-color: rgba(100, 255, 218, 0.1);
 }

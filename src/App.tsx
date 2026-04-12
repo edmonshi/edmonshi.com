@@ -1,14 +1,22 @@
 import "./App.css";
 import NavBar from "./components/NavBar";
 import ProjectPanel from "./components/ProjectPanel";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { skills } from "./data/skills";
-import ParticleBackground from "./components/ParticleBackground";
+import ASCIIKoiPond from "./components/ASCIIKoiPond";
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
+import PretextParagraph from "./components/PretextParagraph";
 
 const sections = ["home", "about", "portfolio"];
+const aboutText = `Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.
+
+My interest in software development started in 2019, and since then, I've been focused on building efficient and user-friendly applications. I enjoy the process of turning complex problems into simple, elegant solutions.
+
+Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.`;
 
 const App: React.FC = () => {
+  const [aboutVisible, setAboutVisible] = useState(false);
+
   useEffect(() => {
     // Landing page animations
     const fadeIn = (selector: string, delay: number) => {
@@ -21,6 +29,7 @@ const App: React.FC = () => {
     fadeIn("#greeting", 500);
     fadeIn("#intro", 800);
     fadeIn("#subtitle", 1100);
+    fadeIn("#cta-button", 1300);
 
     setTimeout(() => {
       document.querySelectorAll(".contact-logo").forEach(el => {
@@ -38,6 +47,7 @@ const App: React.FC = () => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               entry.target.classList.add('slide-in-from-left');
+              setAboutVisible(true);
             }
           });
         },
@@ -68,7 +78,7 @@ const App: React.FC = () => {
           <p id="greeting">Hi, my name is</p>
           <h1 id="intro">Edmon Shi.</h1>
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
-          <a href="#portfolio" className="primary-button" onClick={(e) => {
+          <a href="#portfolio" id="cta-button" className="primary-button" onClick={(e) => {
             e.preventDefault();
             document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
           }}>
@@ -98,11 +108,12 @@ const App: React.FC = () => {
           <div id="aboutme">
             <div>
               <h4>
-                Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.
-                <br /><br />
-                My interest in software development started in 2019, and since then, I've been focused on building efficient and user-friendly applications. I enjoy the process of turning complex problems into simple, elegant solutions.
-                <br /><br />
-                Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.
+                <PretextParagraph
+                  text={aboutText}
+                  font='400 18px Inter'
+                  lineHeight={28.8}
+                  animate={aboutVisible}
+                />
               </h4>
             </div>
             <img src="/photo.jpg" id="headshot" alt="Edmon Shi" />
@@ -158,9 +169,9 @@ const App: React.FC = () => {
       </main>
 
       <footer>
-        <p>Designed & Built by Edmon Shi</p>
+        <p>Made with 🗿 by Edmon Shi</p>
       </footer>
-      <ParticleBackground />
+      <ASCIIKoiPond />
     </div>
   );
 };
