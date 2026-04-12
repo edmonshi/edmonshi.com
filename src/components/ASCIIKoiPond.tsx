@@ -209,8 +209,8 @@ function bodyDeformation(bodyX: number, bodyWave: number, turnBend: number): V3 
   // Swimming wave
   const amp = Math.min(t * 1.8, 1) * 0.28
   const lateralWave = Math.sin(t * 4 - bodyWave) * amp
-  // Turn bend: body curves in the turn direction, increasing toward tail
-  const bend = turnBend * t * t * 0.5
+  // Turn bend: smooth sine curve, no stretching — just lateral offset
+  const bend = turnBend * Math.sin(t * Math.PI) * 0.4
   return [0, 0, lateralWave + bend]
 }
 
@@ -219,33 +219,49 @@ function buildFinVerts(fin: FinDef, time: number, localSpeed: number, turnRate: 
   const wdir = v3norm(fin.widthDir)
   const grid: V3[][] = []
 
-  // Pectoral idle fanning — oscillate the spine direction
-  if (fin.idleFan) {
-    const fanAngle = Math.sin(time * fin.idleFan) * 0.3
-    dir = v3norm(rotY(dir, fanAngle))
-  }
-
   for (let i = 0; i <= fin.segments; i++) {
     const t = i / fin.segments
-    const rawSpinePos = v3add(fin.spineStart, v3scale(dir, t * fin.length))
+
+    // Pectoral flutter — wave propagates along the fin with phase delay per segment
+    let segDir = dir
+    if (fin.idleFan) {
+      const fanWave = Math.sin(time * fin.idleFan * 2 - t * 3) * 0.35 * (0.3 + t * 0.7)
+      segDir = v3norm(rotY(dir, fanWave))
+    }
+
+    const rawSpinePos = v3add(fin.spineStart, v3scale(segDir, t * fin.length))
 
     // Trailing in LOCAL frame
     const trail = t * t * fin.trailFactor * localSpeed * 0.002
     const turnDrag = t * t * turnRate * 0.3
     const trailed: V3 = [rawSpinePos[0] - trail, rawSpinePos[1], rawSpinePos[2] + turnDrag]
 
+    // Wave phase at this spine segment (for multi-axis deformation)
+    const wavePhase = time * 2.2 - t * 4
+
     const row: V3[] = []
     for (let j = 0; j <= fin.widthSegs; j++) {
-      const wt = j / fin.widthSegs           // 0 to 1 across width
-      const edgeDist = Math.abs(wt - 0.5) * 2 // 0 at center, 1 at edges
-      const w = (wt - 0.5) * 2 * fin.width * (1 + t * 0.15) // slight flare at tips
+      const wt = j / fin.widthSegs
+      const edgeDist = Math.abs(wt - 0.5) * 2
+      const w = (wt - 0.5) * 2 * fin.width * (1 + t * 0.15)
 
-      // Edge ruffling — frilly displacement along outer edge
+      // Edge ruffling
       const rufflePerp = v3norm(v3cross(dir, wdir))
       const ruffle = Math.sin(wt * 8 + t * 6 + bodyWave * 0.5) * 0.04 * edgeDist * edgeDist * (0.3 + t)
       const ruffleOffset = v3scale(rufflePerp, ruffle)
 
+      // Vertical curl — wave makes the fin surface undulate up/down, stronger at tips & edges
+      const curlY = Math.sin(wavePhase + wt * 2) * 0.06 * t * (0.4 + edgeDist * 0.6)
+
+      // Twist — outer edges rotate opposite to inner, creating a corkscrew/recoil effect
+      const twist = Math.sin(wavePhase * 0.8 + 1.5) * 0.08 * t * t * (wt - 0.5) * 2
+
+      // Horizontal recoil at tips — tips curl back after the wave passes
+      const recoilX = Math.cos(wavePhase + 0.5) * 0.04 * t * t * edgeDist
+
       const vertPos = v3add(v3add(trailed, v3scale(wdir, w)), ruffleOffset)
+      vertPos[1] += curlY + twist
+      vertPos[0] += recoilX
 
       // Body wave inheritance — amplified toward fin tips
       const inheritFactor = 1 + t * 0.8
@@ -423,7 +439,7 @@ export default function ASCIIKoiPond() {
       f.vy += Math.sin(f.yaw) * thrust * dt * 0.5
 
       // Drag — gradually increases as energy drops
-      const drag = 1.2 + (1 - energy) * 1.5
+      const drag = 2.5 + (1 - energy) * 2.0
       f.vx *= 1 - drag * dt
       f.vy *= 1 - drag * dt
 
@@ -491,7 +507,7 @@ export default function ASCIIKoiPond() {
 
       // Body wave speed tied to swimming speed + yaw change rate
       const yawRate = Math.abs(yawDiff)
-      f.bodyWave += dt * (4 + curSpd * 0.05 + yawRate * 8)
+      f.bodyWave += dt * (2 + curSpd * 0.12 + yawRate * 15)
     }
 
     // ═══════════════════════════════════════
@@ -544,6 +560,26 @@ export default function ASCIIKoiPond() {
         rasterizeTriangle(va, vb, vc, intensity, FISH_ALPHA * depthAlpha, buf, cols, rows)
       }
 
+
+      // --- EYES (single character each, deformed with body) ---
+      const eyeL: V3 = [0.65, 0.08, 0.16]
+      const eyeR: V3 = [0.65, 0.08, -0.16]
+      for (const eyePos of [eyeL, eyeR]) {
+        const deform = bodyDeformation(eyePos[0], f.bodyWave, yawDiff)
+        const deformedEye: V3 = [eyePos[0] + deform[0], eyePos[1] + deform[1], eyePos[2] + deform[2]]
+        const proj = projectVertex(deformedEye, [0, 0, 0], f.yaw, f.pitch, f.roll, curScale, f.x, f.y)
+        // Skip if eye is on the far side of the body
+        if (proj[2] > 0) continue
+        const ec = Math.round(proj[0] / CELL_W)
+        const er = Math.round(proj[1] / CELL_H)
+        if (ec >= 0 && ec < cols && er >= 0 && er < rows) {
+          const existing = buf[er][ec]
+          // Only draw if no body surface is closer (proper depth test)
+          if (!existing || proj[2] <= existing.depth) {
+            buf[er][ec] = { char: '@', depth: proj[2], alpha: FISH_ALPHA * 1.8 * depthAlpha }
+          }
+        }
+      }
 
       // --- FINS ---
       for (const fin of FINS) {
