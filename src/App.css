@@ -183,7 +183,7 @@ h1.section-heading::after {
 }
 
 #aboutme h4 {
-  color: var(--text-dim);
+  color: #d0d0d0;
   font-size: 18px;
   font-weight: 400;
   line-height: 1.6;

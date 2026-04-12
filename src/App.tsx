@@ -51,7 +51,7 @@ const App: React.FC = () => {
             }
           });
         },
-        { threshold: 0.2 }
+        { threshold: 0.5 }
       );
 
       observer.observe(aboutSection);
