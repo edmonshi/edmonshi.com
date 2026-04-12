@@ -127,8 +127,8 @@ interface FinDef {
 
 const FINS: FinDef[] = [
   // ═══ DORSAL — moderate rounded fan, sits toward rear of back ═══
-  { spineStart: [-0.35, 0.39, 0], spineDir: [-0.4, 0.7, 0], length: 0.8,
-    width: 0.45, widthDir: [-1, 0.2, 0], segments: 10, widthSegs: 6,
+  { spineStart: [-0.35, 0.2, 0], spineDir: [-0.4, 0.7, 0], length: 0.8,
+    width: 0.45, widthDir: [-1, 0.2, 0], segments: 20, widthSegs: 12,
     waveAmp: 0.08, waveFreq: 2.0, waveSpeed: 2.0, trailFactor: 0.45, opacity: 0.75 },
 
   // ═══ CAUDAL (halfmoon) — 7 equal-length lobes fanning 180° ═══
@@ -137,12 +137,12 @@ const FINS: FinDef[] = [
     const dirY = Math.sin(angle)
     const dirX = -Math.cos(angle) * 0.6 - 0.4 // all point somewhat backward
     return {
-      spineStart: [-0.92, dirY * 0.06, 0],
+      spineStart: [-0.65, dirY * 0.06, 0],
       spineDir: [dirX, dirY, 0],
       length: 1.2,
       width: 0.4,
       widthDir: [dirY * 0.3, -dirX * 0.3 + 0.5, 0.15],
-      segments: 14, widthSegs: 7,
+      segments: 22, widthSegs: 12,
       waveAmp: 0.15, waveFreq: 1.3, waveSpeed: 1.3,
       trailFactor: 0.7, opacity: 0.72,
     }
@@ -154,12 +154,12 @@ const FINS: FinDef[] = [
     const dirY = -0.85 + Math.abs(angle) * 0.3
     const dirX = -0.5 - i * 0.12
     return {
-      spineStart: [-0.1 - i * 0.1, -0.38, 0],
+      spineStart: [-0.1 - i * 0.1, -0.2, 0],
       spineDir: [dirX, dirY, 0],
       length: 1.2 - i * 0.05,
       width: 0.5,
       widthDir: [-1, 0.1 + angle * 0.3, 0],
-      segments: 14, widthSegs: 7,
+      segments: 22, widthSegs: 12,
       waveAmp: 0.1, waveFreq: 1.8, waveSpeed: 1.8,
       trailFactor: 0.55, opacity: 0.68,
     }
@@ -169,11 +169,11 @@ const FINS: FinDef[] = [
   ...[0, 1, 2].map((i): FinDef => {
     const spread = (i / 2 - 0.5) * 0.6
     return {
-      spineStart: [0.25, -0.25, 0.18],
+      spineStart: [0.25, -0.1, 0.08],
       spineDir: [0.1 + spread * 0.15, -0.7, 0.4],
       length: 0.8, width: 0.3,
       widthDir: [0, -1, 0.1 + spread * 0.2],
-      segments: 14, widthSegs: 7,
+      segments: 22, widthSegs: 12,
       waveAmp: 0.06, waveFreq: 3.0, waveSpeed: 3.0, trailFactor: 0.3, opacity: 0.6,
       idleFan: 2.5,
     }
@@ -181,11 +181,11 @@ const FINS: FinDef[] = [
   ...[0, 1, 2].map((i): FinDef => {
     const spread = (i / 2 - 0.5) * 0.6
     return {
-      spineStart: [0.25, -0.25, -0.18],
+      spineStart: [0.25, -0.1, -0.08],
       spineDir: [0.1 + spread * 0.15, -0.7, -0.4],
       length: 0.8, width: 0.3,
       widthDir: [0, -1, -0.1 - spread * 0.2],
-      segments: 14, widthSegs: 7,
+      segments: 22, widthSegs: 12,
       waveAmp: 0.06, waveFreq: 3.0, waveSpeed: 3.0, trailFactor: 0.3, opacity: 0.6,
       idleFan: 2.5,
     }
@@ -193,12 +193,12 @@ const FINS: FinDef[] = [
 
   // ═══ PELVIC — long, thin, trailing like ribbons ═══
   // Left
-  { spineStart: [0.15, -0.35, 0.1], spineDir: [-0.15, -1, 0.4], length: 0.7,
-    width: 0.1, widthDir: [-1, 0, 0.2], segments: 10, widthSegs: 4,
+  { spineStart: [0.15, -0.05, 0.03], spineDir: [-0.15, -1, 0.4], length: 0.7,
+    width: 0.1, widthDir: [-1, 0, 0.2], segments: 18, widthSegs: 8,
     waveAmp: 0.05, waveFreq: 2.5, waveSpeed: 2.5, trailFactor: 0.35, opacity: 0.5 },
   // Right
-  { spineStart: [0.15, -0.35, -0.1], spineDir: [-0.15, -1, -0.4], length: 0.7,
-    width: 0.1, widthDir: [-1, 0, -0.2], segments: 10, widthSegs: 4,
+  { spineStart: [0.15, -0.05, -0.03], spineDir: [-0.15, -1, -0.4], length: 0.7,
+    width: 0.1, widthDir: [-1, 0, -0.2], segments: 18, widthSegs: 8,
     waveAmp: 0.05, waveFreq: 2.5, waveSpeed: 2.5, trailFactor: 0.35, opacity: 0.5 },
 ]
 
@@ -243,7 +243,9 @@ function buildFinVerts(fin: FinDef, time: number, localSpeed: number, turnRate: 
     for (let j = 0; j <= fin.widthSegs; j++) {
       const wt = j / fin.widthSegs
       const edgeDist = Math.abs(wt - 0.5) * 2
-      const w = (wt - 0.5) * 2 * fin.width * (1 + t * 0.15)
+      // Taper width at tips for rounded ends
+      const tipTaper = t > 0.7 ? 1 - ((t - 0.7) / 0.3) ** 2 : 1
+      const w = (wt - 0.5) * 2 * fin.width * (1 + t * 0.15) * tipTaper
 
       // Edge ruffling
       const rufflePerp = v3norm(v3cross(dir, wdir))
@@ -354,7 +356,7 @@ const DEPTH_SCALE_MIN = 0.3   // at max depth, fish is 30% of full size
 const DEPTH_ALPHA_MIN = 0.3   // at max depth, alpha is 30% of normal
 
 interface Ripple { x: number; y: number; birth: number }
-const RIPPLE_LIFE = 5, RIPPLE_SPEED = 120, RIPPLE_RINGS = 3
+const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3
 
 // ═══════════════════════════════════════════════════════════════
 //  COMPONENT
@@ -432,7 +434,7 @@ export default function ASCIIKoiPond() {
       // Energy cycle — smoothly fades between swimming and idle
       const idleCycle = Math.sin(t * 0.12 + f.seed * 2) + Math.sin(t * 0.07 + f.seed * 4) * 0.5
       const energy = Math.max(0, Math.min(1, (0.8 - idleCycle) / 1.0))
-      const thrust = energy * (70 + Math.sin(t * 0.15 + f.seed) * 20)
+      const thrust = energy * (100 + Math.sin(t * 0.15 + f.seed) * 25)
 
       // Thrust in facing direction
       f.vx += Math.cos(f.yaw) * thrust * dt * 2
@@ -623,7 +625,7 @@ export default function ASCIIKoiPond() {
       for (const rip of ripplesRef.current) {
         const age = (now - rip.birth) / 1000; if (age > RIPPLE_LIFE) continue
         const dist = Math.sqrt((px - rip.x) ** 2 + (py - rip.y) ** 2)
-        const fade = Math.exp(-age * 1.2)
+        const fade = Math.max(0, 1 - age / RIPPLE_LIFE) ** 2
         for (let ring = 0; ring < RIPPLE_RINGS; ring++) {
           const rAge = age - ring * 0.3; if (rAge < 0) continue
           const radius = rAge * RIPPLE_SPEED, ringW = 15 + rAge * 12
@@ -631,7 +633,7 @@ export default function ASCIIKoiPond() {
           if (fromRing < ringW) glow = Math.max(glow, fade * (1 - ring * 0.25) * (1 - fromRing / ringW) * 0.22)
         }
       }
-      return glow
+      return glow < 0.05 ? 0 : glow
     }
 
     // ═══════════════════════════════════════
