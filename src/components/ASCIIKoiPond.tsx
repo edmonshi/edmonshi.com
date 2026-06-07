@@ -675,7 +675,7 @@ export default function ASCIIKoiPond() {
           // Water
           const ch = waterGrid[r][c]
           const gDist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2)
-          const glow = gDist < 100 ? (1 - gDist / 100) * 0.06 : 0
+          const glow = gDist < 75 ? (1 - gDist / 75) * 0.06 : 0
           const extra = glow + ripple
           if (extra > 0.001) {
             const gc = ch ?? '01'[(r * 7 + c * 13) % 2]
