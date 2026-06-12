@@ -105,7 +105,7 @@ const App: React.FC = () => {
               className="project-panel"
               title="Autonomous Chessboard"
               icon={<ChessIcon />}
-              videoUrl="/chessboardrobot.MOV"
+              videoUrl="/chessboard.mp4"
               description="A robotic chessboard that tracks pieces using Hall effect sensors and plays against humans using Stockfish. Features a CoreXY motion system."
               projectUrl="https://git.uwaterloo.ca/b27dai/se101_group_project"
               tags={["C", "JS", "WebSockets", "Robotics"]}
