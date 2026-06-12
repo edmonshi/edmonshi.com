@@ -93,7 +93,10 @@ export default function WaterScene() {
 
     const lowEnd = (navigator.hardwareConcurrency ?? 8) < 4
     const dprCap = pond.isTouch ? (lowEnd ? 1.5 : 2) : 2
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap))
+    // Half-res internal buffer: the caustics/rays are low-frequency and sit at
+    // ~5% opacity, so the upscale is invisible while the fill cost drops 4x.
+    const RES_SCALE = 0.5
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap) * RES_SCALE)
 
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
@@ -144,7 +147,7 @@ export default function WaterScene() {
           p = mod(p + 1.0, 2.0) - 1.0;             // wrap
           vA = 0.10 + depth * 0.18;
           gl_Position = vec4(p, 0.0, 1.0);
-          gl_PointSize = (1.0 + depth * 2.0) * uDPR;
+          gl_PointSize = max((1.0 + depth * 2.0) * uDPR, 1.0);
         }
       `,
       fragmentShader: /* glsl */ `
