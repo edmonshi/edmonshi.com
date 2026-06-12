@@ -137,6 +137,11 @@ function initSectionReveals() {
     scrollTrigger: { trigger: '#projects', start: 'top 80%' },
   })
 
+  gsap.from('.tech-tag', {
+    opacity: 0, y: 8, duration: 0.5, ease: EASE_REVEAL, stagger: 0.05,
+    scrollTrigger: { trigger: '#projects', start: 'top 80%' },
+  })
+
   // depth line: 1px mint progress line on the right edge
   gsap.to('#depth-line', {
     scaleY: 1, ease: 'none',

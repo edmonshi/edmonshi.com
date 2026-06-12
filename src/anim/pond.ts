@@ -78,10 +78,15 @@ export function initPond(): () => void {
   }
 }
 
-/** Age idle timer, decay speed, expire ripples. Call once per frame from the fish loop. */
+/**
+ * Age idle timer, decay speed, expire ripples. The fish loop is the sole
+ * driver — if it pauses (hidden tab), aging pauses too; consumers re-derive
+ * ripple age from `birth`, so stale entries stay harmless.
+ */
 export function tickPond(dtMs: number) {
   pond.cursor.idleMs += dtMs
-  pond.cursor.speed *= 0.95
+  // ≈ ×0.95 per frame at 60fps, frame-rate independent on 120/165Hz displays
+  pond.cursor.speed *= Math.exp(-3 * (dtMs / 1000))
   const now = performance.now()
   if (pond.ripples.length && now - pond.ripples[0].birth > RIPPLE_LIFE_S * 1000) {
     pond.ripples = pond.ripples.filter(r => now - r.birth < RIPPLE_LIFE_S * 1000)
