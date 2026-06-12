@@ -128,10 +128,10 @@ export default function WaterScene() {
     const pmat = new THREE.ShaderMaterial({
       transparent: true,
       depthTest: false,
-      uniforms: { uTime: uniforms.uTime, uScroll: uniforms.uScroll, uPar: { value: new THREE.Vector2(0, 0) }, uStatic: uniforms.uStatic },
+      uniforms: { uTime: uniforms.uTime, uScroll: uniforms.uScroll, uPar: { value: new THREE.Vector2(0, 0) }, uStatic: uniforms.uStatic, uDPR: { value: renderer.getPixelRatio() } },
       vertexShader: /* glsl */ `
         attribute float aSeed;
-        uniform float uTime; uniform float uScroll; uniform vec2 uPar; uniform float uStatic;
+        uniform float uTime; uniform float uScroll; uniform vec2 uPar; uniform float uStatic; uniform float uDPR;
         varying float vA;
         void main() {
           float t = mix(uTime, 0.0, uStatic);
@@ -140,11 +140,11 @@ export default function WaterScene() {
           p.x += sin(t * (0.05 + aSeed * 0.001) + aSeed) * 0.04;
           p.y += cos(t * (0.04 + aSeed * 0.0013) + aSeed * 2.0) * 0.04
                + uScroll * (0.15 + depth * 0.5);   // rise as the page descends
-          p += uPar * depth * 0.03;                // cursor parallax
+          p += uPar * depth * 0.03 * (1.0 - uStatic);  // cursor parallax (frozen under reduced motion)
           p = mod(p + 1.0, 2.0) - 1.0;             // wrap
           vA = 0.10 + depth * 0.18;
           gl_Position = vec4(p, 0.0, 1.0);
-          gl_PointSize = 1.0 + depth * 2.0;
+          gl_PointSize = (1.0 + depth * 2.0) * uDPR;
         }
       `,
       fragmentShader: /* glsl */ `
