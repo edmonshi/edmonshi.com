@@ -8,11 +8,10 @@ function NavBar({ sections }: NavBarProps) {
   return (
     <nav>
       {sections.map((e, index) => (
-        <a 
+        <a
           key={e}
-          onClick={() => {
-            scrollToSection(e);
-          }}
+          href={`#${e}`}
+          onClick={(ev) => { ev.preventDefault(); scrollToSection(e); }}
         >
           <span style={{ color: 'var(--primary-accent)', marginRight: '5px', fontSize: '12px' }}>
             0{index + 1}.
