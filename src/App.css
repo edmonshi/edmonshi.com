@@ -275,12 +275,14 @@ h1.section-heading {
   filter: drop-shadow(0 0 6px rgba(100, 255, 218, 0.6));
 }
 
-/* Custom cursor — fine pointers only; native cursor hidden when active */
+/* Custom cursor — fine pointers only; native cursor hidden when active.
+   The universal selector + !important beats element-level cursor rules
+   (nav a, .primary-button, text I-beams) that otherwise resurface the
+   native cursor on click/focus. */
 @media (pointer: fine) {
   body.cursor-on,
-  body.cursor-on a,
-  body.cursor-on button {
-    cursor: none;
+  body.cursor-on * {
+    cursor: none !important;
   }
 }
 

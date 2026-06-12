@@ -367,6 +367,8 @@ export default function ASCIIKoiPond() {
   useEffect(() => {
     const canvas = canvasRef.current!
     const ctx = canvas.getContext('2d')!
+    const waterLayer = document.createElement('canvas')
+    const wctx = waterLayer.getContext('2d')!
     let w = 0, h = 0, cols = 0, rows = 0
     let waterGrid: (string | null)[][] = []
     let swapTimes: number[][] = []
@@ -393,6 +395,10 @@ export default function ASCIIKoiPond() {
           Math.random() < WATER_FILL ? '01'[Math.floor(Math.random() * 2)] : null))
       swapTimes = Array.from({ length: rows }, () =>
         Array.from({ length: cols }, () => now + Math.random() * 5000))
+      waterLayer.width = w * dpr
+      waterLayer.height = h * dpr
+      wctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      redrawWater(now)
     }
 
     function initFish() {
@@ -664,48 +670,88 @@ export default function ASCIIKoiPond() {
     // ═══════════════════════════════════════
     //  RENDER
     // ═══════════════════════════════════════
-    function render(now: number) {
-      ctx.clearRect(0, 0, w, h)
-      ctx.font = FONT; ctx.textBaseline = 'middle'
+    // The ambient "01" water field changes slowly (each cell swaps every 2-7s),
+    // so it lives on an offscreen canvas redrawn at most every 150ms. The
+    // per-frame pass is one drawImage plus only the cells that actually move:
+    // fish, cursor glow (≤75px box), ripple rings (bounded boxes). This keeps a
+    // frame within the ~6ms budget of high-refresh displays instead of ~6k
+    // fillText calls per frame.
+    const WATER_REDRAW_MS = 150
+    let lastWaterDraw = -Infinity
 
-      const mx = pond.cursor.x, my = pond.cursor.y
-      const hasRipples = pond.ripples.length > 0
-      const waterStyle = `rgba(${ACCENT.r},${ACCENT.g},${ACCENT.b},${WATER_ALPHA})`
-
-      // Build fish raster buffer
-      const fishBuf: RasterCell[][] = Array.from({ length: rows }, () => Array(cols).fill(null))
-      renderFish(now, fishBuf)
-
-      ctx.fillStyle = waterStyle
-      const lit: [number, number, string, number][] = []
-
+    function redrawWater(now: number) {
+      lastWaterDraw = now
+      wctx.clearRect(0, 0, w, h)
+      wctx.font = FONT
+      wctx.textBaseline = 'middle'
+      wctx.fillStyle = `rgba(${ACCENT.r},${ACCENT.g},${ACCENT.b},${WATER_ALPHA})`
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (now > swapTimes[r][c]) {
             waterGrid[r][c] = Math.random() < WATER_FILL ? '01'[Math.floor(Math.random() * 2)] : null
             swapTimes[r][c] = now + 2000 + Math.random() * 5000
           }
-
-          const px = c * CELL_W, py = r * CELL_H
-          const ripple = hasRipples ? getRippleGlow(px, py, now) : 0
-
-          // Fish cell
-          const cell = fishBuf[r][c]
-          if (cell) {
-            lit.push([px, py, cell.char, Math.min(0.7, cell.alpha + ripple)])
-            continue
-          }
-
-          // Water
           const ch = waterGrid[r][c]
-          const gDist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2)
-          const glow = gDist < 75 ? (1 - gDist / 75) * 0.06 : 0
-          const extra = glow + ripple
-          if (extra > 0.001) {
-            const gc = ch ?? '01'[(r * 7 + c * 13) % 2]
-            lit.push([px, py, gc, WATER_ALPHA + extra])
-          } else if (ch) {
-            ctx.fillText(ch, px, py)
+          if (ch) wctx.fillText(ch, c * CELL_W, r * CELL_H)
+        }
+      }
+    }
+
+    function render(now: number) {
+      ctx.clearRect(0, 0, w, h)
+      ctx.font = FONT; ctx.textBaseline = 'middle'
+
+      if (now - lastWaterDraw > WATER_REDRAW_MS) redrawWater(now)
+      ctx.drawImage(waterLayer, 0, 0, w, h)
+
+      const mx = pond.cursor.x, my = pond.cursor.y
+
+      // Build fish raster buffer
+      const fishBuf: RasterCell[][] = Array.from({ length: rows }, () => Array(cols).fill(null))
+      renderFish(now, fishBuf)
+
+      const lit: [number, number, string, number][] = []
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = fishBuf[r][c]
+          if (cell) lit.push([c * CELL_W, r * CELL_H, cell.char, Math.min(0.7, cell.alpha)])
+        }
+      }
+
+      // Cursor glow — only the cells inside its 75px radius
+      if (mx > -9000) {
+        const GLOW = 75
+        const c0 = Math.max(0, Math.floor((mx - GLOW) / CELL_W)), c1 = Math.min(cols - 1, Math.ceil((mx + GLOW) / CELL_W))
+        const r0 = Math.max(0, Math.floor((my - GLOW) / CELL_H)), r1 = Math.min(rows - 1, Math.ceil((my + GLOW) / CELL_H))
+        for (let r = r0; r <= r1; r++) {
+          for (let c = c0; c <= c1; c++) {
+            if (fishBuf[r][c]) continue
+            const px = c * CELL_W, py = r * CELL_H
+            const gDist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2)
+            if (gDist >= GLOW) continue
+            const gc = waterGrid[r][c] ?? '01'[(r * 7 + c * 13) % 2]
+            lit.push([px, py, gc, WATER_ALPHA + (1 - gDist / GLOW) * 0.06])
+          }
+        }
+      }
+
+      // Ripple rings — only the cells inside each ripple's current extent
+      for (const rip of pond.ripples) {
+        const age = (now - rip.birth) / 1000
+        if (age > RIPPLE_LIFE) continue
+        const maxR = age * RIPPLE_SPEED + 15 + age * 12 + CELL_W
+        const c0 = Math.max(0, Math.floor((rip.x - maxR) / CELL_W)), c1 = Math.min(cols - 1, Math.ceil((rip.x + maxR) / CELL_W))
+        const r0 = Math.max(0, Math.floor((rip.y - maxR) / CELL_H)), r1 = Math.min(rows - 1, Math.ceil((rip.y + maxR) / CELL_H))
+        for (let r = r0; r <= r1; r++) {
+          for (let c = c0; c <= c1; c++) {
+            if (fishBuf[r][c]) continue
+            const px = c * CELL_W, py = r * CELL_H
+            const ripple = getRippleGlow(px, py, now)
+            if (ripple > 0.001) {
+              const gc = waterGrid[r][c] ?? '01'[(r * 7 + c * 13) % 2]
+              lit.push([px, py, gc, WATER_ALPHA + ripple])
+            }
           }
         }
       }
