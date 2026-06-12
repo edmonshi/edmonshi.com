@@ -2,10 +2,10 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import { useLenis, scrollToSection } from "./anim/useLenis";
 import ProjectPanel from "./components/ProjectPanel";
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { skills } from "./data/skills";
 import ASCIIKoiPond from "./components/ASCIIKoiPond";
-import WaterScene from "./components/WaterScene";
+const WaterScene = lazy(() => import("./components/WaterScene"));
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
 import PretextParagraph from "./components/PretextParagraph";
 import { initPond } from "./anim/pond";
@@ -179,7 +179,7 @@ const App: React.FC = () => {
         <p>Made with 🗿 by Edmon Shi</p>
       </footer>
       <ASCIIKoiPond />
-      <WaterScene />
+      <Suspense fallback={null}><WaterScene /></Suspense>
     </div>
   );
 };

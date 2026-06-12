@@ -138,7 +138,7 @@ export default function WaterScene() {
     }
 
     if (pond.reducedMotion) render()           // single static frame
-    else renderer.setAnimationLoop(render)
+    else if (!document.hidden) renderer.setAnimationLoop(render)
 
     const onVis = () => {
       if (pond.reducedMotion) return
@@ -147,13 +147,22 @@ export default function WaterScene() {
     const onLost = (e: Event) => { e.preventDefault(); setDead(true) }
     const onResize = () => { resize(); if (pond.reducedMotion) render() }
 
+    let rmScrollQueued = false
+    const onRmScroll = () => {
+      if (!pond.reducedMotion || rmScrollQueued) return
+      rmScrollQueued = true
+      requestAnimationFrame(() => { rmScrollQueued = false; render() })
+    }
+
     document.addEventListener('visibilitychange', onVis)
     canvas.addEventListener('webglcontextlost', onLost)
     window.addEventListener('resize', onResize)
+    window.addEventListener('scroll', onRmScroll, { passive: true })
     return () => {
       document.removeEventListener('visibilitychange', onVis)
       canvas.removeEventListener('webglcontextlost', onLost)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', onRmScroll)
       renderer.setAnimationLoop(null)
       quad.geometry.dispose()
       ;(quad.material as THREE.ShaderMaterial).dispose()
