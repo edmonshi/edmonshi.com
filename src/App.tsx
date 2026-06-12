@@ -1,5 +1,6 @@
 import "./App.css";
 import NavBar from "./components/NavBar";
+import { useLenis, scrollToSection } from "./anim/useLenis";
 import ProjectPanel from "./components/ProjectPanel";
 import { useEffect, useState } from 'react';
 import { skills } from "./data/skills";
@@ -15,6 +16,7 @@ My interest in software development started in 2019, and since then, I've been f
 Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.`;
 
 const App: React.FC = () => {
+  useLenis();
   const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
@@ -80,7 +82,7 @@ const App: React.FC = () => {
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
           <a href="#portfolio" id="cta-button" className="primary-button" onClick={(e) => {
             e.preventDefault();
-            document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
+            scrollToSection('portfolio');
           }}>
             Check out my projects!
           </a>

@@ -1,3 +1,5 @@
+import { scrollToSection } from '../anim/useLenis'
+
 interface NavBarProps {
   sections: string[];
 }
@@ -9,7 +11,7 @@ function NavBar({ sections }: NavBarProps) {
         <a 
           key={e}
           onClick={() => {
-            document.getElementById(e)?.scrollIntoView({ behavior: 'smooth' });
+            scrollToSection(e);
           }}
         >
           <span style={{ color: 'var(--primary-accent)', marginRight: '5px', fontSize: '12px' }}>
