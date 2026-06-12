@@ -12,6 +12,7 @@ function NavBar({ sections }: NavBarProps) {
           key={e}
           href={`#${e}`}
           draggable={false}
+          onMouseDown={(ev) => ev.preventDefault()}
           onClick={(ev) => { ev.preventDefault(); scrollToSection(e); }}
         >
           <span style={{ color: 'var(--primary-accent)', marginRight: '5px', fontSize: '12px' }}>
