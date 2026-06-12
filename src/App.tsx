@@ -14,8 +14,8 @@ import { initMotion } from "./anim/reveals";
 const sections = ["home", "about", "portfolio"];
 const aboutParagraphs = [
   "Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.",
-  "My interest in software development started in 2019, and since then, I've been focused on building efficient and user-friendly applications. I enjoy the process of turning complex problems into simple, elegant solutions.",
-  "Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.",
+  "I've been building software since 2019, and I care most about the part where complex problems turn into simple, elegant solutions — the kind you can feel when an interface just works.",
+  "Right now I'm exploring full-stack development and looking for a Fall 2026 co-op. If you're building something interesting, let's talk.",
 ];
 
 const App: React.FC = () => {
@@ -45,7 +45,7 @@ const App: React.FC = () => {
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
           <a href="#portfolio" id="cta-button" className="primary-button" data-magnetic
             onClick={(e) => { e.preventDefault(); scrollToSection("portfolio"); }}>
-            Check out my projects!
+            See what I've built
           </a>
           <div id="contact">
             <a href="mailto:edmonshi0614@gmail.com" target="_blank" rel="noreferrer">
@@ -134,7 +134,9 @@ const App: React.FC = () => {
 
       <footer>
         <p>Made with 🗿 by Edmon Shi</p>
+        <p className="footer-tech">React · Three.js · GSAP — and one very territorial betta</p>
       </footer>
+      <div id="grain" aria-hidden="true" />
       <div id="depth-line" aria-hidden="true" />
       <Cursor />
       <ASCIIKoiPond />
