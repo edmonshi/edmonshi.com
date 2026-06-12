@@ -215,7 +215,7 @@ function bodyDeformation(bodyX: number, bodyWave: number, turnBend: number): V3 
 }
 
 function buildFinVerts(fin: FinDef, time: number, localSpeed: number, turnRate: number, bodyWave: number, turnBend: number): V3[][] {
-  let dir = v3norm(fin.spineDir)
+  const dir = v3norm(fin.spineDir)
   const wdir = v3norm(fin.widthDir)
   const grid: V3[][] = []
 

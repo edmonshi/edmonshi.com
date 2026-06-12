@@ -12,6 +12,12 @@
   --transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   background-color: var(--bg-dark);
   background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);
