@@ -287,6 +287,16 @@ h1.section-heading {
   }
 }
 
+/* Press-and-hold on a link must not start a native link-drag — the drag
+   operation overrides cursor:none with the OS drag/pointer cursor. */
+a, a *, img, svg {
+  -webkit-user-drag: none;
+}
+
+nav a, .primary-button {
+  user-select: none;
+}
+
 .cursor-dot,
 .cursor-ring {
   position: fixed;

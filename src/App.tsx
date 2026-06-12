@@ -43,7 +43,7 @@ const App: React.FC = () => {
           <p id="greeting">Hi, my name is</p>
           <h1 id="intro">Edmon Shi.</h1>
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
-          <a href="#portfolio" id="cta-button" className="primary-button" data-magnetic
+          <a href="#portfolio" id="cta-button" className="primary-button" data-magnetic draggable={false}
             onClick={(e) => { e.preventDefault(); scrollToSection("portfolio"); }}>
             See what I've built
           </a>
