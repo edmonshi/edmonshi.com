@@ -29,13 +29,25 @@ export default function Cursor() {
       ring.classList.toggle('cursor-ring--hover', !!hot)
     }
     const onLeave = () => document.body.classList.remove('cursor-on')
+    // Native drag and selection gestures hand cursor control to the OS
+    // (Chromium shows the grab/pointer cursor mid-press regardless of CSS).
+    // Kill both at the document level; prose stays selectable.
+    const onDragStart = (e: Event) => e.preventDefault()
+    const onSelectStart = (e: Event) => {
+      const t = e.target as HTMLElement
+      if (!t.closest?.('#about-text, .panel-description, footer')) e.preventDefault()
+    }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerover', onOver)
     document.documentElement.addEventListener('pointerleave', onLeave)
+    document.addEventListener('dragstart', onDragStart)
+    document.addEventListener('selectstart', onSelectStart)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerover', onOver)
       document.documentElement.removeEventListener('pointerleave', onLeave)
+      document.removeEventListener('dragstart', onDragStart)
+      document.removeEventListener('selectstart', onSelectStart)
       document.body.classList.remove('cursor-on')
     }
   }, [])
