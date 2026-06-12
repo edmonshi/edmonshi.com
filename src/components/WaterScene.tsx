@@ -112,6 +112,53 @@ export default function WaterScene() {
     )
     scene.add(quad)
 
+    // ~150 dust/plankton motes (75 on touch). NDC coords; drift in vertex shader.
+    const COUNT = pond.isTouch ? 75 : 150
+    const pos = new Float32Array(COUNT * 3)
+    const seed = new Float32Array(COUNT)
+    for (let i = 0; i < COUNT; i++) {
+      pos[i * 3] = Math.random() * 2 - 1
+      pos[i * 3 + 1] = Math.random() * 2 - 1
+      pos[i * 3 + 2] = Math.random()            // pseudo-depth 0..1 for parallax
+      seed[i] = Math.random() * 100
+    }
+    const pgeo = new THREE.BufferGeometry()
+    pgeo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    pgeo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1))
+    const pmat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthTest: false,
+      uniforms: { uTime: uniforms.uTime, uScroll: uniforms.uScroll, uPar: { value: new THREE.Vector2(0, 0) }, uStatic: uniforms.uStatic },
+      vertexShader: /* glsl */ `
+        attribute float aSeed;
+        uniform float uTime; uniform float uScroll; uniform vec2 uPar; uniform float uStatic;
+        varying float vA;
+        void main() {
+          float t = mix(uTime, 0.0, uStatic);
+          float depth = position.z;             // 0 far .. 1 near
+          vec2 p = position.xy;
+          p.x += sin(t * (0.05 + aSeed * 0.001) + aSeed) * 0.04;
+          p.y += cos(t * (0.04 + aSeed * 0.0013) + aSeed * 2.0) * 0.04
+               + uScroll * (0.15 + depth * 0.5);   // rise as the page descends
+          p += uPar * depth * 0.03;                // cursor parallax
+          p = mod(p + 1.0, 2.0) - 1.0;             // wrap
+          vA = 0.10 + depth * 0.18;
+          gl_Position = vec4(p, 0.0, 1.0);
+          gl_PointSize = 1.0 + depth * 2.0;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        varying float vA;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          if (d > 0.5) discard;
+          gl_FragColor = vec4(0.65, 0.85, 0.80, vA * (1.0 - d * 2.0));
+        }
+      `,
+    })
+    const points = new THREE.Points(pgeo, pmat)
+    scene.add(points)
+
     const resize = () => {
       const w = window.innerWidth, h = window.innerHeight
       renderer.setSize(w, h, false)
@@ -134,6 +181,9 @@ export default function WaterScene() {
           v.set(r.x, r.y, age < RIPPLE_LIFE_S ? age : -1)
         } else v.z = -1
       }
+      const cx = pond.cursor.x > -9000 ? (pond.cursor.x / window.innerWidth - 0.5) : 0
+      const cy = pond.cursor.y > -9000 ? (pond.cursor.y / window.innerHeight - 0.5) : 0
+      ;(pmat.uniforms.uPar.value as THREE.Vector2).set(cx, -cy)
       renderer.render(scene, camera)
     }
 
@@ -166,6 +216,7 @@ export default function WaterScene() {
       renderer.setAnimationLoop(null)
       quad.geometry.dispose()
       ;(quad.material as THREE.ShaderMaterial).dispose()
+      pgeo.dispose(); pmat.dispose()
       renderer.dispose()
     }
   }, [dead])
