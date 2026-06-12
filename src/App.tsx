@@ -5,8 +5,10 @@ import ProjectPanel from "./components/ProjectPanel";
 import { useEffect, useState } from 'react';
 import { skills } from "./data/skills";
 import ASCIIKoiPond from "./components/ASCIIKoiPond";
+import WaterScene from "./components/WaterScene";
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
 import PretextParagraph from "./components/PretextParagraph";
+import { initPond } from "./anim/pond";
 
 const sections = ["home", "about", "portfolio"];
 const aboutText = `Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.
@@ -20,6 +22,8 @@ const App: React.FC = () => {
   const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
+    const cleanupPond = initPond();
+
     // Landing page animations
     const fadeIn = (selector: string, delay: number) => {
       setTimeout(() => {
@@ -60,7 +64,8 @@ const App: React.FC = () => {
       return () => observer.disconnect();
     };
 
-    return setupScrollAnimation();
+    const cleanupScroll = setupScrollAnimation();
+    return () => { cleanupPond(); cleanupScroll?.(); };
   }, []);
 
   return (
@@ -174,6 +179,7 @@ const App: React.FC = () => {
         <p>Made with 🗿 by Edmon Shi</p>
       </footer>
       <ASCIIKoiPond />
+      <WaterScene />
     </div>
   );
 };
