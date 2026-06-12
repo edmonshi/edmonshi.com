@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface ProjectPanelProps {
     className?: string;
@@ -21,6 +21,21 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
     tags,
     icon,
 }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Defer video fetch + playback until the card nears the viewport; pause
+    // (and stop decoding) when it leaves.
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const io = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) video.play().catch(() => { });
+            else video.pause();
+        }, { rootMargin: '200px' });
+        io.observe(video);
+        return () => io.disconnect();
+    }, []);
+
     return (
         <div className={className}>
             <a href={projectUrl}
@@ -49,11 +64,13 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
                 <div className="panel-media">
                     {videoUrl ? (
                         <video
+                            ref={videoRef}
                             className="panel-video"
                             src={videoUrl}
-                            autoPlay
                             loop
                             muted
+                            playsInline
+                            preload="none"
                         />
                     ) : (
                         <img

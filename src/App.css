@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+/* Fonts load via <link> in index.html (preconnect + parallel fetch — an
+   @import here would serialize the request chain behind the CSS bundle). */
 
 :root {
   --primary-accent: #64ffda;
