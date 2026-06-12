@@ -283,7 +283,9 @@ h1.section-heading {
 @media (pointer: fine) {
   body.cursor-on,
   body.cursor-on * {
-    cursor: none !important;
+    /* 1x1 transparent PNG instead of `none`: Chromium ignores cursor:none
+       while a mouse button is held, but image cursors survive the press. */
+    cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=") 0 0, none !important;
   }
 }
 
