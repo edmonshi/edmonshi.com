@@ -105,17 +105,16 @@ section {
   font-size: clamp(14px, 5vw, 16px);
   margin-bottom: 20px;
   opacity: 0;
-  transition: opacity 1s ease;
 }
 
 #intro {
-  font-size: clamp(40px, 8vw, 80px);
+  font-size: clamp(48px, 10vw, 140px);
   font-weight: 700;
   color: #ffffff;
   line-height: 1.1;
   margin: 0 0 20px 0;
   opacity: 0;
-  transition: opacity 1s ease;
+  letter-spacing: -0.02em;
 }
 
 #subtitle {
@@ -126,7 +125,6 @@ section {
   max-width: 800px;
   margin-bottom: 50px;
   opacity: 0;
-  transition: opacity 1s ease;
 }
 
 #contact {
@@ -144,20 +142,11 @@ section {
   opacity: 0;
 }
 
+/* Note: opacity: 0 is initial state; GSAP animates it in. transition: var(--transition) kept for hover. */
+
 .contact-logo:hover {
   fill: var(--primary-accent);
   transform: translateY(-3px);
-}
-
-#about {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 1s ease, transform 1s ease;
-}
-
-#about.slide-in-from-left {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 h1.section-heading {
@@ -171,31 +160,11 @@ h1.section-heading {
   color: #ffffff;
 }
 
-h1.section-heading::after {
-  content: "";
-  display: block;
-  position: relative;
-  top: 0;
-  width: 300px;
-  height: 1px;
-  margin-left: 20px;
-  background-color: var(--bg-light);
-}
-
 #aboutme {
   display: flex;
   gap: 50px;
   align-items: center;
   justify-content: space-between;
-}
-
-#aboutme h4 {
-  color: #d0d0d0;
-  font-size: 18px;
-  font-weight: 400;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 600px;
 }
 
 #headshot {
@@ -204,7 +173,9 @@ h1.section-heading::after {
   height: 300px;
   object-fit: cover;
   border-radius: 4px;
-  transition: var(--transition);
+  /* GSAP owns opacity here — transition only the hover properties */
+  transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),
+    box-shadow 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   border: 1px solid var(--glass-border);
   background: var(--bg-card);
 }
@@ -288,7 +259,9 @@ h1.section-heading::after {
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 2rem 1.75rem;
-  transition: var(--transition);
+  /* GSAP owns opacity/transform on this element — never transition `all` here */
+  transition: border-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),
+    box-shadow 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -297,7 +270,6 @@ h1.section-heading::after {
 }
 
 .project-panel:hover {
-  transform: translateY(-10px);
   border-color: var(--primary-accent);
   box-shadow: 0 20px 30px -15px rgba(0, 0, 0, 0.7);
 }
@@ -420,17 +392,65 @@ footer {
 
 #cta-button {
   opacity: 0;
-  transition: opacity 1s ease;
 }
 
 .primary-button:hover {
   background-color: rgba(100, 255, 218, 0.1);
 }
 
+.heading-text { display: inline-block; }
+
+.rule {
+  display: block;
+  width: 300px;
+  height: 1px;
+  margin-left: 24px;
+  background-color: rgba(255, 255, 255, 0.14);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.ghost-num {
+  position: absolute;
+  left: -0.05em;
+  top: 50%;
+  transform: translateY(-52%);
+  font-family: 'Roboto Mono', monospace;
+  font-size: clamp(110px, 18vw, 200px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+}
+
+#about-text p {
+  color: #d0d0d0;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  margin: 0 0 1em;
+  max-width: 600px;
+}
+
+#depth-line {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100vh;
+  background: var(--primary-accent);
+  opacity: 0.45;
+  transform: scaleY(0);
+  transform-origin: top;
+  z-index: 1001;
+  pointer-events: none;
+}
+
 @media screen and (max-width: 1080px) {
   main { padding: 0 30px; }
   #aboutme { flex-direction: column; text-align: center; }
-  #aboutme h4 { max-width: 100%; }
+  #about-text p { max-width: 100%; }
 }
 
 @media screen and (max-width: 768px) {

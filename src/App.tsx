@@ -1,81 +1,38 @@
 import "./App.css";
 import NavBar from "./components/NavBar";
-import { useLenis, scrollToSection } from "./anim/useLenis";
 import ProjectPanel from "./components/ProjectPanel";
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from "react";
 import { skills } from "./data/skills";
 import ASCIIKoiPond from "./components/ASCIIKoiPond";
 const WaterScene = lazy(() => import("./components/WaterScene"));
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
-import PretextParagraph from "./components/PretextParagraph";
 import { initPond } from "./anim/pond";
+import { useLenis, scrollToSection } from "./anim/useLenis";
+import { initMotion } from "./anim/reveals";
 
 const sections = ["home", "about", "portfolio"];
-const aboutText = `Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.
-
-My interest in software development started in 2019, and since then, I've been focused on building efficient and user-friendly applications. I enjoy the process of turning complex problems into simple, elegant solutions.
-
-Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.`;
+const aboutParagraphs = [
+  "Hello! I'm Edmon, a Software Engineering student at the University of Waterloo.",
+  "My interest in software development started in 2019, and since then, I've been focused on building efficient and user-friendly applications. I enjoy the process of turning complex problems into simple, elegant solutions.",
+  "Currently, I'm exploring full-stack development and looking for opportunities to apply my skills in real-world projects. I'm seeking a co-op position for Fall 2026.",
+];
 
 const App: React.FC = () => {
   useLenis();
-  const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
     const cleanupPond = initPond();
-
-    // Landing page animations
-    const fadeIn = (selector: string, delay: number) => {
-      setTimeout(() => {
-        const el = document.querySelector(selector);
-        if (el) (el as HTMLElement).style.opacity = "1";
-      }, delay);
-    };
-
-    fadeIn("#greeting", 500);
-    fadeIn("#intro", 800);
-    fadeIn("#subtitle", 1100);
-    fadeIn("#cta-button", 1300);
-
-    setTimeout(() => {
-      document.querySelectorAll(".contact-logo").forEach(el => {
-        (el as HTMLElement).style.opacity = "1";
-      });
-    }, 1500);
-
-    // Scroll-triggered animations
-    const setupScrollAnimation = () => {
-      const aboutSection = document.querySelector('#about');
-      if (!aboutSection) return;
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('slide-in-from-left');
-              setAboutVisible(true);
-            }
-          });
-        },
-        { threshold: 0.5 }
-      );
-
-      observer.observe(aboutSection);
-      return () => observer.disconnect();
-    };
-
-    const cleanupScroll = setupScrollAnimation();
-    return () => { cleanupPond(); cleanupScroll?.(); };
+    const cleanupMotion = initMotion();
+    return () => { cleanupMotion(); cleanupPond(); };
   }, []);
 
   return (
     <div className="App">
-      <meta name="theme-color" content="#000000" />
       <header>
         <div className="logo">
           <h3>ES</h3>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
           <NavBar sections={sections} />
         </div>
       </header>
@@ -85,10 +42,8 @@ const App: React.FC = () => {
           <p id="greeting">Hi, my name is</p>
           <h1 id="intro">Edmon Shi.</h1>
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
-          <a href="#portfolio" id="cta-button" className="primary-button" onClick={(e) => {
-            e.preventDefault();
-            scrollToSection('portfolio');
-          }}>
+          <a href="#portfolio" id="cta-button" className="primary-button" data-magnetic
+            onClick={(e) => { e.preventDefault(); scrollToSection("portfolio"); }}>
             Check out my projects!
           </a>
           <div id="contact">
@@ -111,17 +66,14 @@ const App: React.FC = () => {
         </section>
 
         <section id="about">
-          <h1 className="section-heading">02. About Me</h1>
+          <h1 className="section-heading">
+            <span className="ghost-num" aria-hidden="true">02</span>
+            <span className="heading-text">About Me</span>
+            <span className="rule" aria-hidden="true" />
+          </h1>
           <div id="aboutme">
-            <div>
-              <h4>
-                <PretextParagraph
-                  text={aboutText}
-                  font='400 18px Inter'
-                  lineHeight={28.8}
-                  animate={aboutVisible}
-                />
-              </h4>
+            <div id="about-text">
+              {aboutParagraphs.map((p, i) => (<p key={i}>{p}</p>))}
             </div>
             <img src="/photo.jpg" id="headshot" alt="Edmon Shi" />
           </div>
@@ -142,7 +94,11 @@ const App: React.FC = () => {
         </section>
 
         <section id="portfolio">
-          <h1 className="section-heading">03. Some Things I've Built</h1>
+          <h1 className="section-heading">
+            <span className="ghost-num" aria-hidden="true">03</span>
+            <span className="heading-text">Some Things I've Built</span>
+            <span className="rule" aria-hidden="true" />
+          </h1>
           <div id="projects">
             <ProjectPanel
               className="project-panel"
@@ -178,6 +134,7 @@ const App: React.FC = () => {
       <footer>
         <p>Made with 🗿 by Edmon Shi</p>
       </footer>
+      <div id="depth-line" aria-hidden="true" />
       <ASCIIKoiPond />
       <Suspense fallback={null}><WaterScene /></Suspense>
     </div>
