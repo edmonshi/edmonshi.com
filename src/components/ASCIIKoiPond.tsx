@@ -356,7 +356,7 @@ const MAX_DEPTH = 1
 const DEPTH_SCALE_MIN = 0.3   // at max depth, fish is 30% of full size
 const DEPTH_ALPHA_MIN = 0.3   // at max depth, alpha is 30% of normal
 
-const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3
+const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3 // glow life (s); pond keeps ripples 5s (RIPPLE_LIFE_S) — consumers re-derive age from birth
 
 // ═══════════════════════════════════════════════════════════════
 //  COMPONENT
@@ -476,7 +476,7 @@ export default function ASCIIKoiPond() {
       const SECTION_ANCHORS = [
         { x: 0.72, y: 0.55 },   // home: right of the name
         { x: 0.16, y: 0.78 },   // about: lower-left, clear of text and photo
-        { x: 0.82, y: 0.18 },   // portfolio: upper-right
+        { x: 0.78, y: 0.30 },   // portfolio: upper-right, inset clear of edge-avoidance zones
       ]
       if (!pond.reducedMotion) {
         const an = SECTION_ANCHORS[pond.section] ?? SECTION_ANCHORS[0]
@@ -728,12 +728,22 @@ export default function ASCIIKoiPond() {
       animId = requestAnimationFrame(loop)
     }
 
+    const onVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId)
+      } else {
+        prevTime = 0 // skip the hidden gap so dt stays sane
+        animId = requestAnimationFrame(loop)
+      }
+    }
     resize(); initFish()
     animId = requestAnimationFrame(loop)
     window.addEventListener('resize', resize)
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 
