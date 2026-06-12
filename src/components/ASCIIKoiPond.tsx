@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { pond, tickPond } from '../anim/pond'
 
 // ═══════════════════════════════════════════════════════════════
 //  CONFIG
@@ -355,7 +356,6 @@ const MAX_DEPTH = 1
 const DEPTH_SCALE_MIN = 0.3   // at max depth, fish is 30% of full size
 const DEPTH_ALPHA_MIN = 0.3   // at max depth, alpha is 30% of normal
 
-interface Ripple { x: number; y: number; birth: number }
 const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3
 
 // ═══════════════════════════════════════════════════════════════
@@ -363,8 +363,6 @@ const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3
 // ═══════════════════════════════════════════════════════════════
 export default function ASCIIKoiPond() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const mouseRef = useRef({ x: -9999, y: -9999 })
-  const ripplesRef = useRef<Ripple[]>([])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -434,7 +432,7 @@ export default function ASCIIKoiPond() {
       // Energy cycle — smoothly fades between swimming and idle
       const idleCycle = Math.sin(t * 0.12 + f.seed * 2) + Math.sin(t * 0.07 + f.seed * 4) * 0.5
       const energy = Math.max(0, Math.min(1, (0.8 - idleCycle) / 1.0))
-      const thrust = energy * (100 + Math.sin(t * 0.15 + f.seed) * 25)
+      const thrust = energy * (100 + Math.sin(t * 0.15 + f.seed) * 25) * (pond.reducedMotion ? 0.3 : 1)
 
       // Thrust in facing direction
       f.vx += Math.cos(f.yaw) * thrust * dt * 2
@@ -445,21 +443,48 @@ export default function ASCIIKoiPond() {
       f.vx *= 1 - drag * dt
       f.vy *= 1 - drag * dt
 
-      // Mouse avoidance — pushes velocity directly
-      const mx = mouseRef.current.x, my = mouseRef.current.y
+      // Cursor: startle scales with cursor speed; idle cursor attracts curiosity
+      const mx = pond.cursor.x, my = pond.cursor.y
       const mdx = f.x - mx, mdy = f.y - my, mD = Math.sqrt(mdx * mdx + mdy * mdy)
-      if (mD < 300 && mD > 1) {
-        const force = (1 - mD / 300) * 120 * dt
-        f.vx += (mdx / mD) * force; f.vy += (mdy / mD) * force
+      if (!pond.reducedMotion && mx > -9000 && mD > 1) {
+        const startle = Math.min(pond.cursor.speed / 1.5, 1)   // ~1 at fast flicks
+        if (mD < 300) {
+          const force = (1 - mD / 300) * (40 + 280 * startle) * dt
+          f.vx += (mdx / mD) * force; f.vy += (mdy / mD) * force
+        }
+        if (pond.cursor.idleMs > 2000 && mD > 150 && mD < 600) {
+          const pull = 30 * dt                                  // curious drift
+          f.vx -= (mdx / mD) * pull; f.vy -= (mdy / mD) * pull
+        }
       }
 
-      // Ripple avoidance — pushes velocity directly
-      for (const rip of ripplesRef.current) {
-        const age = (now - rip.birth) / 1000; if (age > 2) continue
+      // Ripples: brief startle, then the fish comes to investigate
+      if (!pond.reducedMotion) for (const rip of pond.ripples) {
+        const age = (now - rip.birth) / 1000
         const rx = f.x - rip.x, ry = f.y - rip.y, rD = Math.sqrt(rx * rx + ry * ry)
-        if (rD < 300 && rD > 1) {
-          const force = (1 - age / 2) * (1 - rD / 300) * 150 * dt
+        if (rD < 1) continue
+        if (age < 0.6 && rD < 300) {
+          const force = (1 - age / 0.6) * (1 - rD / 300) * 150 * dt
           f.vx += (rx / rD) * force; f.vy += (ry / rD) * force
+        } else if (age >= 0.6 && age < 4 && rD > 120) {
+          const force = (1 - age / 4) * 60 * dt
+          f.vx -= (rx / rD) * force; f.vy -= (ry / rD) * force
+        }
+      }
+
+      // Section migration — each section has a preferred region (viewport-normalized)
+      const SECTION_ANCHORS = [
+        { x: 0.72, y: 0.55 },   // home: right of the name
+        { x: 0.16, y: 0.78 },   // about: lower-left, clear of text and photo
+        { x: 0.82, y: 0.18 },   // portfolio: upper-right
+      ]
+      if (!pond.reducedMotion) {
+        const an = SECTION_ANCHORS[pond.section] ?? SECTION_ANCHORS[0]
+        const adx = an.x * w - f.x, ady = an.y * h - f.y
+        const aD = Math.sqrt(adx * adx + ady * ady)
+        if (aD > 200) {
+          const force = Math.min((aD - 200) / 400, 1) * 50 * dt
+          f.vx += (adx / aD) * force; f.vy += (ady / aD) * force
         }
       }
 
@@ -622,7 +647,7 @@ export default function ASCIIKoiPond() {
     // ═══════════════════════════════════════
     function getRippleGlow(px: number, py: number, now: number): number {
       let glow = 0
-      for (const rip of ripplesRef.current) {
+      for (const rip of pond.ripples) {
         const age = (now - rip.birth) / 1000; if (age > RIPPLE_LIFE) continue
         const dist = Math.sqrt((px - rip.x) ** 2 + (py - rip.y) ** 2)
         const fade = Math.max(0, 1 - age / RIPPLE_LIFE) ** 2
@@ -642,10 +667,9 @@ export default function ASCIIKoiPond() {
     function render(now: number) {
       ctx.clearRect(0, 0, w, h)
       ctx.font = FONT; ctx.textBaseline = 'middle'
-      ripplesRef.current = ripplesRef.current.filter(r => (now - r.birth) / 1000 < RIPPLE_LIFE)
 
-      const mx = mouseRef.current.x, my = mouseRef.current.y
-      const hasRipples = ripplesRef.current.length > 0
+      const mx = pond.cursor.x, my = pond.cursor.y
+      const hasRipples = pond.ripples.length > 0
       const waterStyle = `rgba(${ACCENT.r},${ACCENT.g},${ACCENT.b},${WATER_ALPHA})`
 
       // Build fish raster buffer
@@ -698,27 +722,18 @@ export default function ASCIIKoiPond() {
       if (!prevTime) prevTime = now
       const dt = Math.min((now - prevTime) / 1000, 0.05)
       prevTime = now
+      tickPond(dt * 1000)
       updateFish(dt, now)
       render(now)
       animId = requestAnimationFrame(loop)
     }
 
-    const onMouseMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY } }
-    const onMouseLeave = () => { mouseRef.current = { x: -9999, y: -9999 } }
-    const onClick = (e: MouseEvent) => { ripplesRef.current.push({ x: e.clientX, y: e.clientY, birth: performance.now() }) }
-
     resize(); initFish()
     animId = requestAnimationFrame(loop)
     window.addEventListener('resize', resize)
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseleave', onMouseLeave)
-    window.addEventListener('click', onClick)
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseleave', onMouseLeave)
-      window.removeEventListener('click', onClick)
     }
   }, [])
 
