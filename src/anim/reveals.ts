@@ -20,15 +20,64 @@ let splits: SplitText[] = []
 /** Create all animations with revertable cleanup. Call once after mount. */
 export function initMotion(): () => void {
   splits = []
+  const removers: (() => void)[] = []
   const ctx = gsap.context(() => {
     heroIntro()
     initSectionReveals()
+    initMagnetic(removers)
+    initTilt(removers)
   })
   return () => {
+    removers.forEach(r => r())
     ctx.revert()
     splits.forEach(s => s.revert())
     splits = []
   }
+}
+
+const finePointer = () => window.matchMedia('(pointer: fine)').matches
+
+/** Elements with [data-magnetic] lean toward the cursor within their box. */
+function initMagnetic(removers: (() => void)[]) {
+  if (!finePointer() || reduced()) return
+  document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach(el => {
+    const xTo = gsap.quickTo(el, 'x', { duration: 0.4, ease: 'power3.out' })
+    const yTo = gsap.quickTo(el, 'y', { duration: 0.4, ease: 'power3.out' })
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect()
+      xTo((e.clientX - r.left - r.width / 2) * 0.3)
+      yTo((e.clientY - r.top - r.height / 2) * 0.4)
+    }
+    const onLeave = () => { xTo(0); yTo(0) }
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerleave', onLeave)
+    removers.push(() => {
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerleave', onLeave)
+    })
+  })
+}
+
+/** Project cards tilt ≤4° toward the cursor. */
+function initTilt(removers: (() => void)[]) {
+  if (!finePointer() || reduced()) return
+  document.querySelectorAll<HTMLElement>('.project-panel').forEach(card => {
+    gsap.set(card, { transformPerspective: 800 })
+    const rX = gsap.quickTo(card, 'rotationX', { duration: 0.5, ease: 'power3.out' })
+    const rY = gsap.quickTo(card, 'rotationY', { duration: 0.5, ease: 'power3.out' })
+    const onMove = (e: PointerEvent) => {
+      const r = card.getBoundingClientRect()
+      rY(((e.clientX - r.left) / r.width - 0.5) * 8)
+      rX(-((e.clientY - r.top) / r.height - 0.5) * 8)
+    }
+    const onLeave = () => { rX(0); rY(0) }
+    card.addEventListener('pointermove', onMove)
+    card.addEventListener('pointerleave', onLeave)
+    removers.push(() => {
+      card.removeEventListener('pointermove', onMove)
+      card.removeEventListener('pointerleave', onLeave)
+    })
+  })
 }
 
 /** Hero load-in: greeting, masked name chars, subtitle, CTA, contact icons. */

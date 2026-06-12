@@ -4,6 +4,7 @@ import ProjectPanel from "./components/ProjectPanel";
 import { lazy, Suspense, useEffect } from "react";
 import { skills } from "./data/skills";
 import ASCIIKoiPond from "./components/ASCIIKoiPond";
+import Cursor from "./components/Cursor";
 const WaterScene = lazy(() => import("./components/WaterScene"));
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
 import { initPond } from "./anim/pond";
@@ -135,6 +136,7 @@ const App: React.FC = () => {
         <p>Made with 🗿 by Edmon Shi</p>
       </footer>
       <div id="depth-line" aria-hidden="true" />
+      <Cursor />
       <ASCIIKoiPond />
       <Suspense fallback={null}><WaterScene /></Suspense>
     </div>

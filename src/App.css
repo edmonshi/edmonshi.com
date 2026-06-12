@@ -63,6 +63,7 @@ nav {
 }
 
 nav a {
+  position: relative;
   padding: 10px;
   text-decoration: none;
   color: var(--text-main);
@@ -71,6 +72,24 @@ nav a {
   margin-left: 20px;
   transition: var(--transition);
   cursor: pointer;
+}
+
+nav a::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 1px;
+  background: var(--primary-accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 nav a:hover {
@@ -244,6 +263,59 @@ h1.section-heading {
 @keyframes scroll-skills {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+#skills-bar:hover .skills-track {
+  animation-play-state: paused;
+}
+
+.skill-item:hover .skill-icon-container svg {
+  filter: drop-shadow(0 0 6px rgba(100, 255, 218, 0.6));
+}
+
+/* Custom cursor — fine pointers only; native cursor hidden when active */
+@media (pointer: fine) {
+  body.cursor-on,
+  body.cursor-on a,
+  body.cursor-on button {
+    cursor: none;
+  }
+}
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+body.cursor-on .cursor-dot,
+body.cursor-on .cursor-ring {
+  opacity: 1;
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary-accent);
+}
+
+.cursor-ring {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(100, 255, 218, 0.5);
+  transition: opacity 0.3s ease, width 0.25s ease, height 0.25s ease, border-color 0.25s ease;
+}
+
+.cursor-ring--hover {
+  width: 44px;
+  height: 44px;
+  border-color: rgba(100, 255, 218, 0.9);
 }
 
 #projects {
