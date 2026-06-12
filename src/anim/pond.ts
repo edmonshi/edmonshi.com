@@ -19,6 +19,12 @@ let lastX = -9999, lastY = -9999, lastT = 0
 
 /** Attach global listeners. Call once after mount; returns cleanup. */
 export function initPond(): () => void {
+  // Reset module/singleton state — initPond runs twice under StrictMode dev mounts
+  lastX = -9999; lastY = -9999; lastT = 0
+  pond.ripples = []
+  pond.cursor.speed = 0
+  pond.cursor.idleMs = 0
+
   pond.isTouch = window.matchMedia('(pointer: coarse)').matches
   const rmq = window.matchMedia('(prefers-reduced-motion: reduce)')
   pond.reducedMotion = rmq.matches
