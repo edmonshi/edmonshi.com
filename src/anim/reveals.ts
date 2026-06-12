@@ -5,9 +5,6 @@ import { SplitText } from 'gsap/SplitText'
 
 gsap.registerPlugin(ScrollTrigger, SplitText)
 
-// TEMP DEBUG — remove before merge
-if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__ST = ScrollTrigger
-
 export const EASE_REVEAL = 'power3.out'
 export const EASE_MASK = 'expo.out'
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
