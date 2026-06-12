@@ -358,6 +358,16 @@ const DEPTH_ALPHA_MIN = 0.3   // at max depth, alpha is 30% of normal
 
 const RIPPLE_LIFE = 4, RIPPLE_SPEED = 60, RIPPLE_RINGS = 3 // glow life (s); pond keeps ripples 5s (RIPPLE_LIFE_S) — consumers re-derive age from birth
 
+// Cursor bubble trail — tiny ASCII bubbles that rise, wobble, and pop
+interface Bubble {
+  x: number; y: number
+  vx: number; vy: number
+  birth: number; life: number  // ms
+  seed: number                 // wobble phase
+}
+const BUBBLE_MAX = 36
+const BUBBLE_ALPHA = 0.32
+
 // ═══════════════════════════════════════════════════════════════
 //  COMPONENT
 // ═══════════════════════════════════════════════════════════════
@@ -760,6 +770,45 @@ export default function ASCIIKoiPond() {
         ctx.fillStyle = `rgba(${ACCENT.r},${ACCENT.g},${ACCENT.b},${a})`
         ctx.fillText(ch, x, y)
       }
+
+      // Bubble trail — drawn last, free-floating (not grid-snapped)
+      for (const b of bubbles) {
+        const t = (now - b.birth) / b.life
+        const ch = t < 0.35 ? '·' : t < 0.75 ? '°' : 'o'
+        const alpha = BUBBLE_ALPHA * (t < 0.8 ? 0.5 + t : (1 - t) / 0.2)
+        ctx.fillStyle = `rgba(${ACCENT.r},${ACCENT.g},${ACCENT.b},${alpha})`
+        ctx.fillText(ch, b.x, b.y)
+      }
+    }
+
+    // ── BUBBLES ──
+    const bubbles: Bubble[] = []
+    let lastBubbleAt = 0
+
+    function updateBubbles(dt: number, now: number) {
+      // spawn behind a moving cursor; faster movement = denser trail
+      const speed = pond.cursor.speed
+      if (!pond.reducedMotion && pond.cursor.x > -9000 && speed > 0.25 &&
+          bubbles.length < BUBBLE_MAX &&
+          now - lastBubbleAt > 120 - Math.min(speed * 30, 90)) {
+        lastBubbleAt = now
+        bubbles.push({
+          x: pond.cursor.x + (Math.random() - 0.5) * 16,
+          y: pond.cursor.y + (Math.random() - 0.5) * 16,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -20 - Math.random() * 24,
+          birth: now,
+          life: 1100 + Math.random() * 900,
+          seed: Math.random() * 10,
+        })
+      }
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        const b = bubbles[i]
+        if (now - b.birth > b.life) { bubbles.splice(i, 1); continue }
+        b.vy -= 16 * dt // buoyancy
+        b.x += (b.vx + Math.sin(now / 350 + b.seed) * 9) * dt
+        b.y += b.vy * dt
+      }
     }
 
     // ── LOOP ──
@@ -770,6 +819,7 @@ export default function ASCIIKoiPond() {
       prevTime = now
       tickPond(dt * 1000)
       updateFish(dt, now)
+      updateBubbles(dt, now)
       render(now)
       animId = requestAnimationFrame(loop)
     }
