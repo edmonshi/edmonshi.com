@@ -126,7 +126,7 @@ const App: React.FC = () => {
               className="project-panel"
               title="Cellular Automata"
               icon={<AutomataIcon />}
-              year="2024"
+              year="2023"
               videoUrl="https://github.com/user-attachments/assets/e8ad756c-e660-4cc6-a8f8-0787dc30417c"
               description="A simulator for various cellular automata rulesets, including Conway's Game of Life and Brian's Brain."
               projectUrl="https://github.com/edmonshi/Cellular-Automata-Simulator"
