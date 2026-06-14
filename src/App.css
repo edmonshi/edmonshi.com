@@ -276,64 +276,6 @@ h1.section-heading {
   filter: drop-shadow(0 0 6px rgba(100, 255, 218, 0.6));
 }
 
-/* Custom cursor — fine pointers only; native cursor hidden when active.
-   The universal selector + !important beats element-level cursor rules
-   (nav a, .primary-button, text I-beams) that otherwise resurface the
-   native cursor on click/focus. */
-@media (pointer: fine) {
-  body.cursor-on,
-  body.cursor-on * {
-    /* 1x1 transparent PNG instead of `none`: Chromium ignores cursor:none
-       while a mouse button is held, but image cursors survive the press. */
-    cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=") 0 0, none !important;
-  }
-}
-
-/* Press-and-hold on a link must not start a native link-drag — the drag
-   operation overrides cursor:none with the OS drag/pointer cursor. */
-a, a *, img, svg {
-  -webkit-user-drag: none;
-}
-
-nav a, .primary-button {
-  user-select: none;
-}
-
-.cursor-dot,
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-body.cursor-on .cursor-dot,
-body.cursor-on .cursor-ring {
-  opacity: 1;
-}
-
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--primary-accent);
-}
-
-.cursor-ring {
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(100, 255, 218, 0.5);
-  transition: opacity 0.3s ease, width 0.25s ease, height 0.25s ease, border-color 0.25s ease;
-}
-
-.cursor-ring--hover {
-  width: 44px;
-  height: 44px;
-  border-color: rgba(100, 255, 218, 0.9);
-}
 
 #projects {
   display: grid;
@@ -536,6 +478,15 @@ footer p {
   z-index: -1;
 }
 
+/* Width must come from the container, not the content: SplitText replaces the
+   flowing text with fixed-width line divs, so a shrink-wrapped flex item would
+   freeze at the split-time width and autoSplit's ResizeObserver (which only
+   fires on element width change) could never trigger a re-split. */
+#about-text {
+  flex: 1;
+  min-width: 0;
+}
+
 #about-text p {
   color: #d0d0d0;
   font-size: 18px;
@@ -562,6 +513,9 @@ footer p {
 @media screen and (max-width: 1080px) {
   main { padding: 0 30px; }
   #aboutme { flex-direction: column; text-align: center; }
+  /* column mode + align-items:center shrink-wraps the cross axis — same
+     SplitText width-freeze trap as above, so take the full width explicitly */
+  #about-text { width: 100%; }
   #about-text p { max-width: 100%; }
 }
 
