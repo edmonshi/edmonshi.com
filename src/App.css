@@ -287,7 +287,7 @@ h1.section-heading {
 #portfolio.is-timeline {
   height: 100vh;
   min-height: 100vh;
-  padding: 110px 0 0;
+  padding: 96px 0 0;
   justify-content: flex-start;
   overflow: hidden;
 }
@@ -304,17 +304,18 @@ h1.section-heading {
 }
 
 .tl-track {
+  --axis: 36%;
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  width: 210vw;
+  width: 190vw;
   will-change: transform;
 }
 
 .tl-axis {
   position: absolute;
-  top: 50%;
+  top: var(--axis);
   left: 0;
   width: 100%;
   height: 1px;
@@ -325,13 +326,13 @@ h1.section-heading {
   position: absolute;
   top: 0;
   height: 100%;
-  width: 340px;
+  width: 320px;
   transform: translateX(-50%);
 }
 
 .tl-node {
   position: absolute;
-  top: 50%;
+  top: var(--axis);
   left: 50%;
   width: 12px;
   height: 12px;
@@ -350,17 +351,17 @@ h1.section-heading {
 .tl-connector {
   position: absolute;
   left: 50%;
-  bottom: 50%;
+  top: var(--axis);
   width: 1px;
-  height: 32px;
+  height: 30px;
   background: rgba(255, 255, 255, 0.18);
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
 }
 
 .tl-connector-down {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: var(--axis);
   width: 1px;
   height: 26px;
   background: rgba(100, 255, 218, 0.4);
@@ -376,8 +377,8 @@ h1.section-heading {
 .tl-label {
   position: absolute;
   left: 50%;
-  bottom: calc(50% + 40px);
-  transform: translateX(-50%);
+  top: var(--axis);
+  transform: translate(-50%, calc(-100% - 38px));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -389,7 +390,7 @@ h1.section-heading {
 }
 
 .tl-station:hover .tl-label {
-  transform: translateX(-50%) translateY(-5px);
+  transform: translate(-50%, calc(-100% - 43px));
 }
 
 .tl-year {
@@ -420,16 +421,16 @@ h1.section-heading {
 
 .tl-card {
   position: absolute;
-  top: calc(50% + 30px);
+  top: calc(var(--axis) + 28px);
   left: 50%;
   transform: translateX(-50%) translateY(8px);
-  width: 320px;
+  width: 300px;
   background: rgba(10, 10, 10, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   opacity: 0;
   max-height: 0;
   overflow: hidden;
@@ -441,13 +442,13 @@ h1.section-heading {
 
 .tl-station:hover .tl-card {
   opacity: 1;
-  max-height: 440px;
+  max-height: 360px;
   transform: translateX(-50%) translateY(0);
   pointer-events: auto;
 }
 
 .tl-card-media {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--glass-border);
@@ -462,9 +463,9 @@ h1.section-heading {
 
 .tl-card-desc {
   color: var(--text-dim);
-  font-size: 14px;
-  line-height: 1.55;
-  margin: 12px 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 10px 0 9px;
 }
 
 .tl-hint {

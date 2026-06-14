@@ -27,7 +27,7 @@ const PROJECTS: Project[] = [
   {
     title: 'Cellular Automata',
     year: '2023',
-    pos: 0.16,
+    pos: 0.16, // track positions: oldest near left, newest scrolls to center
     icon: <AutomataIcon />,
     videoUrl: 'https://github.com/user-attachments/assets/e8ad756c-e660-4cc6-a8f8-0787dc30417c',
     description: "A simulator for various cellular automata rulesets, including Conway's Game of Life and Brian's Brain.",
@@ -37,7 +37,7 @@ const PROJECTS: Project[] = [
   {
     title: 'Celestial Simulator',
     year: '2024',
-    pos: 0.5,
+    pos: 0.45,
     icon: <OrbitIcon />,
     videoUrl: 'https://github.com/exisodd/celestial-simulator/assets/96459404/30d4bb50-aad8-489f-a7cc-1052034a7dfe',
     description: '3D N-Body gravity simulation with Barnes-Hut optimization. Visualizes gravitational fields in real-time.',
@@ -47,7 +47,7 @@ const PROJECTS: Project[] = [
   {
     title: 'Autonomous Chessboard',
     year: '2024',
-    pos: 0.84,
+    pos: 0.74,
     icon: <ChessIcon />,
     videoUrl: '/chessboard.mp4',
     description: 'A robotic chessboard that tracks pieces using Hall effect sensors and plays against humans using Stockfish. Features a CoreXY motion system.',
