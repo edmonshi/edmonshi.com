@@ -9,6 +9,7 @@ interface ProjectPanelProps {
     projectUrl: string;
     tags?: string[];
     icon?: React.ReactNode;
+    year?: string;
 }
 
 const ProjectPanel: React.FC<ProjectPanelProps> = ({
@@ -20,6 +21,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
     projectUrl,
     tags,
     icon,
+    year,
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -43,6 +45,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
                 rel="noopener noreferrer"
                 className="project-link"
             >
+                {year && <span className="panel-year" aria-label={`Year ${year}`}>{year}</span>}
                 <div className="panel-content">
                     <div className="panel-header">
                         <h3 className="panel-name">

@@ -106,6 +106,7 @@ const App: React.FC = () => {
               className="project-panel"
               title="Autonomous Chessboard"
               icon={<ChessIcon />}
+              year="2024"
               videoUrl="/chessboard.mp4"
               description="A robotic chessboard that tracks pieces using Hall effect sensors and plays against humans using Stockfish. Features a CoreXY motion system."
               projectUrl="https://git.uwaterloo.ca/b27dai/se101_group_project"
@@ -115,6 +116,7 @@ const App: React.FC = () => {
               className="project-panel"
               title="Celestial Simulator"
               icon={<OrbitIcon />}
+              year="2024"
               videoUrl="https://github.com/exisodd/celestial-simulator/assets/96459404/30d4bb50-aad8-489f-a7cc-1052034a7dfe"
               description="3D N-Body gravity simulation with Barnes-Hut optimization. Visualizes gravitational fields in real-time."
               projectUrl="https://github.com/tran-ethan/celestial-simulator"
@@ -124,6 +126,7 @@ const App: React.FC = () => {
               className="project-panel"
               title="Cellular Automata"
               icon={<AutomataIcon />}
+              year="2024"
               videoUrl="https://github.com/user-attachments/assets/e8ad756c-e660-4cc6-a8f8-0787dc30417c"
               description="A simulator for various cellular automata rulesets, including Conway's Game of Life and Brian's Brain."
               projectUrl="https://github.com/edmonshi/Cellular-Automata-Simulator"

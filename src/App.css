@@ -313,8 +313,19 @@ h1.section-heading {
   height: 100%;
 }
 
+.panel-year {
+  position: absolute;
+  top: 2rem;
+  right: 1.75rem;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
 .project-panel .panel-name {
   margin: 0 0 20px;
+  padding-right: 3rem;
   color: #ffffff;
   font-size: 24px;
   display: flex;
