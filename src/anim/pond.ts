@@ -46,7 +46,7 @@ export function initPond(): () => void {
   const onLeave = () => { pond.cursor.x = -9999; pond.cursor.y = -9999; pond.cursor.speed = 0 }
   const onDown = (e: PointerEvent) => {
     pond.ripples.push({ x: e.clientX, y: e.clientY, birth: performance.now() })
-    if (pond.ripples.length > 8) pond.ripples.shift()
+    if (pond.ripples.length > 16) pond.ripples.shift()
   }
   // Flag active scrolling so the canvas/WebGL layers can throttle themselves and
   // hand the frame budget to the scroll while the page is moving.

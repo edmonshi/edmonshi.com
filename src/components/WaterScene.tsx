@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { pond, RIPPLE_LIFE_S } from '../anim/pond'
 
-const MAX_RIPPLES = 8
+const MAX_RIPPLES = 16
 
 const VERT = /* glsl */ `
   varying vec2 vUv;
@@ -60,7 +60,7 @@ const FRAG = /* glsl */ `
 
     // base: the old body radial gradient (circle at 50% 0%, #1a1a1a -> #000 at 70%)
     float g = 1.0 - smoothstep(0.0, 0.7, distance(uv, vec2(0.5, 1.0)));
-    vec3 col = vec3(0.102) * g;
+    vec3 col = vec3(0.135) * g;
 
     vec3 mint = vec3(0.392, 1.0, 0.855);      // #64ffda
     col += mint * caustics(p, t) * 0.045;
