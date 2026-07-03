@@ -107,21 +107,35 @@ export default function ProjectTimeline() {
     if (!horizontal) return
     const section = sectionRef.current!
     const track = trackRef.current!
-    const distance = () => Math.max(0, track.scrollWidth - window.innerWidth)
+    // Translate just enough to bring the LAST node to window center. A station's
+    // offsetLeft is its node point (the -50% transform doesn't affect layout
+    // offset); the track sits inside .tl-viewport, which is inset from the window
+    // edges by the page container, so fold that inset in or the node lands short.
+    const centerLast = () => {
+      const stations = track.querySelectorAll<HTMLElement>('.tl-station')
+      const last = stations[stations.length - 1]
+      if (!last) return 0
+      const inset = (track.parentElement?.getBoundingClientRect().left) ?? 0
+      return Math.max(0, inset + last.offsetLeft - window.innerWidth / 2)
+    }
+    // A trailing "dwell": extra pinned scroll where the track holds at the centered
+    // end, so scrub (which lags ~0.6s) actually settles there and you can rest on
+    // the last project instead of it scrolling past at ~62% before catching up.
+    const TAIL = 0.18
     const ctx = gsap.context(() => {
-      gsap.to(track, {
-        x: () => -distance(),
-        ease: 'none',
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top top',
-          end: () => '+=' + distance(),
+          end: () => '+=' + (centerLast() / (1 - TAIL)),
           pin: true,
           scrub: 0.6,
           invalidateOnRefresh: true,
           anticipatePin: 1,
         },
       })
+      tl.to(track, { x: () => -centerLast(), ease: 'none', duration: 1 - TAIL })
+        .to(track, { x: () => -centerLast(), ease: 'none', duration: TAIL }) // hold centered
     }, section)
     ScrollTrigger.refresh()
     return () => ctx.revert()
@@ -140,6 +154,17 @@ export default function ProjectTimeline() {
           <div className="tl-track" ref={trackRef}>
             <div className="tl-axis" aria-hidden="true" />
             {PROJECTS.map(p => <Station key={p.title} p={p} />)}
+            <div
+              className="tl-end"
+              aria-hidden="true"
+              // Fixed px gap from the last project, not a track %: the track is
+              // 190vw (scales with window) but the viewport is a fixed max-width,
+              // so a % offset clips off-screen on wide (1440p+) monitors.
+              style={{ left: `calc(${PROJECTS[PROJECTS.length - 1].pos * 100}% + 260px)` }}
+            >
+              <span className="tl-end-label">more to come&hellip;</span>
+              <span className="tl-end-node" />
+            </div>
           </div>
           <span className="tl-hint" aria-hidden="true">scroll to explore &rarr;</span>
         </div>

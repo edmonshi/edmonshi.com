@@ -13,6 +13,7 @@ export const pond = {
   ripples: [] as PondRipple[],
   isTouch: false,
   reducedMotion: false,
+  scrolling: false,         // true while the page is actively scrolling
 }
 
 let lastX = -9999, lastY = -9999, lastT = 0
@@ -47,9 +48,15 @@ export function initPond(): () => void {
     pond.ripples.push({ x: e.clientX, y: e.clientY, birth: performance.now() })
     if (pond.ripples.length > 8) pond.ripples.shift()
   }
+  // Flag active scrolling so the canvas/WebGL layers can throttle themselves and
+  // hand the frame budget to the scroll while the page is moving.
+  let scrollIdle: ReturnType<typeof setTimeout> | undefined
   const onScroll = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight
     pond.scroll = max > 0 ? Math.min(window.scrollY / max, 1) : 0
+    pond.scrolling = true
+    clearTimeout(scrollIdle)
+    scrollIdle = setTimeout(() => { pond.scrolling = false }, 140)
   }
 
   const io = new IntersectionObserver(entries => {
@@ -69,6 +76,7 @@ export function initPond(): () => void {
   onScroll()
 
   return () => {
+    clearTimeout(scrollIdle)
     rmq.removeEventListener('change', onRmq)
     io.disconnect()
     window.removeEventListener('pointermove', onMove)

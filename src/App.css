@@ -42,9 +42,10 @@ header {
   position: fixed;
   top: 0;
   width: 100%;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Opaque-ish instead of backdrop-filter: a fixed blurred header forces the GPU
+     to re-blur everything scrolling behind it every frame — a major scroll-jank
+     source on integrated GPUs. Over the near-black content this looks identical. */
+  background: rgba(10, 10, 10, 0.88);
   z-index: 1000;
   box-sizing: border-box;
   border-bottom: 1px solid var(--glass-border);
@@ -304,7 +305,7 @@ h1.section-heading {
 }
 
 .tl-track {
-  --axis: 36%;
+  --axis: 26%; /* upper third — leaves room for the large cards to unfold downward */
   position: absolute;
   top: 0;
   left: 0;
@@ -424,13 +425,14 @@ h1.section-heading {
   top: calc(var(--axis) + 28px);
   left: 50%;
   transform: translateX(-50%) translateY(8px);
-  width: 300px;
+  width: 600px;
+  max-width: 90vw;
   background: rgba(10, 10, 10, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 16px;
   opacity: 0;
   max-height: 0;
   overflow: hidden;
@@ -442,7 +444,7 @@ h1.section-heading {
 
 .tl-station:hover .tl-card {
   opacity: 1;
-  max-height: 360px;
+  max-height: 560px;
   transform: translateX(-50%) translateY(0);
   pointer-events: auto;
 }
@@ -463,9 +465,56 @@ h1.section-heading {
 
 .tl-card-desc {
   color: var(--text-dim);
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 10px 0 9px;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 14px 0 12px;
+}
+
+/* Terminal "ghost station": a hollow, slowly-rotating node on the axis with a
+   dim italic label, hinting the timeline continues. Not a .tl-station, so it
+   doesn't affect last-node centering. */
+.tl-end {
+  position: absolute;
+  left: 87%;
+  top: 0;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.tl-end-node {
+  position: absolute;
+  top: var(--axis);
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--primary-accent);
+  background: transparent;
+  box-shadow: 0 0 12px rgba(100, 255, 218, 0.35);
+  animation: tl-end-spin 9s linear infinite;
+}
+
+.tl-end-label {
+  position: absolute;
+  left: 50%;
+  top: var(--axis);
+  transform: translate(-50%, calc(-100% - 38px));
+  font-family: 'Roboto Mono', monospace;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  font-style: italic;
+  color: var(--primary-accent);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+@keyframes tl-end-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-end-node { animation: none; }
 }
 
 .tl-hint {

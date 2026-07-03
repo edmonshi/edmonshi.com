@@ -91,12 +91,14 @@ export default function WaterScene() {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' })
     } catch { setDead(true); return }
 
+    // Internal buffer resolution as a fraction of CSS pixels — deliberately NOT
+    // multiplied by devicePixelRatio. The caustics/rays are low-frequency at ~5%
+    // opacity, so a half-CSS-res buffer is invisible; the old `min(dpr,2)*0.5`
+    // formula rendered this full-screen procedural shader at full native res on
+    // hi-DPI laptops (dpr 2 → 1.0), which pins an integrated GPU below refresh.
     const lowEnd = (navigator.hardwareConcurrency ?? 8) < 4
-    const dprCap = pond.isTouch ? (lowEnd ? 1.5 : 2) : 2
-    // Half-res internal buffer: the caustics/rays are low-frequency and sit at
-    // ~5% opacity, so the upscale is invisible while the fill cost drops 4x.
-    const RES_SCALE = 0.5
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap) * RES_SCALE)
+    const RES_SCALE = (pond.isTouch || lowEnd) ? 0.4 : 0.5
+    renderer.setPixelRatio(RES_SCALE)
 
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
@@ -169,8 +171,17 @@ export default function WaterScene() {
     }
     resize()
 
+    // Cap the full-screen caustics/godray shader to ~36fps. It's slow-moving
+    // ambient fill; rendering it every vsync (120/165Hz) wastes integrated-GPU
+    // fill-rate and competes with scroll compositing. setAnimationLoop still
+    // fires per vsync, but we skip the actual draw between frame slots.
+    let lastDraw = 0
     const render = () => {
       const now = performance.now()
+      // ~36fps ambient, ~15fps while scrolling to free GPU/compositing for scroll.
+      const frameMs = pond.scrolling ? 1000 / 15 : 1000 / 36
+      if (now - lastDraw < frameMs - 1) return
+      lastDraw = now
       uniforms.uTime.value = now / 1000
       uniforms.uScroll.value = pond.scroll
       uniforms.uCursor.value.set(pond.cursor.x, pond.cursor.y)

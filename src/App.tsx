@@ -18,6 +18,12 @@ const aboutParagraphs = [
   "I'm hunting for what's next: a Fall 2026 co-op where I can do my best work. Building something worth chasing? Let's talk.",
 ];
 
+// Perf-diagnostic toggles: append ?water=off / ?fish=off / ?smooth=off to the URL
+// to disable a layer and isolate what costs frames on a given machine.
+const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+const SHOW_WATER = params.get('water') !== 'off';
+const SHOW_FISH = params.get('fish') !== 'off';
+
 const App: React.FC = () => {
   useLenis();
 
@@ -103,8 +109,8 @@ const App: React.FC = () => {
       </footer>
       <div id="grain" aria-hidden="true" />
       <div id="depth-line" aria-hidden="true" />
-      <ASCIIKoiPond />
-      <Suspense fallback={null}><WaterScene /></Suspense>
+      {SHOW_FISH && <ASCIIKoiPond />}
+      {SHOW_WATER && <Suspense fallback={null}><WaterScene /></Suspense>}
     </div>
   );
 };

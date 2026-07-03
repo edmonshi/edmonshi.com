@@ -18,6 +18,8 @@ export function scrollToSection(id: string) {
 export function useLenis() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // ?smooth=off → native scroll (ScrollTrigger still works); perf diagnostic.
+    if (new URLSearchParams(window.location.search).get('smooth') === 'off') return
     lenis = new Lenis({ duration: 1.1 })
     lenis.on('scroll', ScrollTrigger.update)
     const raf = (time: number) => lenis?.raf(time * 1000)
