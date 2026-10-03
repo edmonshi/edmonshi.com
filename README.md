@@ -8,10 +8,9 @@ My personal portfolio website showcasing my journey as a Software Engineering st
 
 - **Interactive Landing Page** with smooth animations
 - **Scroll-triggered Animations** for the About section
-- **Animated Skills Bar** with seamless looping
 - **Project Portfolio** with hover effects and tags
 - **Responsive Design** that works across all devices
-- **Particle Background** using particles-bg for visual appeal
+- **Underwater Background** with water shaders and a GPU-animated ASCII betta
 - **Contact Integration** with direct email, GitHub, and LinkedIn links
 
 ## ⚙️ Tech Stack
@@ -19,15 +18,16 @@ My personal portfolio website showcasing my journey as a Software Engineering st
 - **Frontend:** React + TypeScript
 - **Styling:** CSS3 with custom animations
 - **Build Tool:** Vite
-- **Animations:** Custom CSS keyframes and Intersection Observer
-- **Background Effects:** particles-bg (npm)
+- **Animations:** GSAP, Lenis, CSS keyframes, and GPU fin deformation
+- **Background Effects:** Three.js, WebGL2, and an ASCII post-processing shader
 - **Icons:** Font Awesome SVGs
 
 ## 🎯 Projects Featured
 
-1. **Autonomous Chessboard Robot** - C, JavaScript, WebSockets, Robotics, Pathfinding
-2. **Celestial Simulator** - Java, JavaFX, 3D Graphics, Physics Simulation
-3. **Cellular Automata Simulator** - Java, JavaFX, Game of Life, Animation
+1. **Combadge** - C, Python, QNX, Raspberry Pi, OpenAI ([Devpost](https://devpost.com/software/combadge))
+2. **Autonomous Chessboard Robot** - C, JavaScript, WebSockets, Robotics, Pathfinding
+3. **Celestial Simulator** - Java, JavaFX, 3D Graphics, Physics Simulation
+4. **Cellular Automata Simulator** - Java, JavaFX, Game of Life, Animation
 
 ## 🤝 Contributing
 

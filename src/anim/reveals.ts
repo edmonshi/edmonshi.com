@@ -22,7 +22,6 @@ export function initMotion(): () => void {
     heroIntro()
     initSectionReveals()
     initMagnetic(removers)
-    initTilt(removers)
   })
   return () => {
     removers.forEach(r => r())
@@ -51,28 +50,6 @@ function initMagnetic(removers: (() => void)[]) {
     removers.push(() => {
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerleave', onLeave)
-    })
-  })
-}
-
-/** Project cards tilt ≤4° toward the cursor. */
-function initTilt(removers: (() => void)[]) {
-  if (!finePointer() || reduced()) return
-  document.querySelectorAll<HTMLElement>('.project-panel').forEach(card => {
-    gsap.set(card, { transformPerspective: 800 })
-    const rX = gsap.quickTo(card, 'rotationX', { duration: 0.5, ease: 'power3.out' })
-    const rY = gsap.quickTo(card, 'rotationY', { duration: 0.5, ease: 'power3.out' })
-    const onMove = (e: PointerEvent) => {
-      const r = card.getBoundingClientRect()
-      rY(((e.clientX - r.left) / r.width - 0.5) * 8)
-      rX(-((e.clientY - r.top) / r.height - 0.5) * 8)
-    }
-    const onLeave = () => { rX(0); rY(0) }
-    card.addEventListener('pointermove', onMove)
-    card.addEventListener('pointerleave', onLeave)
-    removers.push(() => {
-      card.removeEventListener('pointermove', onMove)
-      card.removeEventListener('pointerleave', onLeave)
     })
   })
 }

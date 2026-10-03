@@ -22,9 +22,11 @@ export function useLenis() {
     if (new URLSearchParams(window.location.search).get('smooth') === 'off') return
     lenis = new Lenis({ duration: 1.1 })
     lenis.on('scroll', ScrollTrigger.update)
+    const refreshDimensions = () => lenis?.resize()
+    ScrollTrigger.addEventListener('refresh', refreshDimensions)
     const raf = (time: number) => lenis?.raf(time * 1000)
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
-    return () => { gsap.ticker.remove(raf); lenis?.destroy(); lenis = null }
+    return () => { ScrollTrigger.removeEventListener('refresh', refreshDimensions); gsap.ticker.remove(raf); lenis?.destroy(); lenis = null }
   }, [])
 }

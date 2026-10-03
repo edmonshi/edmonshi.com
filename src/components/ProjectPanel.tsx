@@ -5,6 +5,7 @@ interface ProjectPanelProps {
     title: string;
     imageUrl?: string;
     videoUrl?: string;
+    demoUrl?: string;
     description: string;
     projectUrl: string;
     tags?: string[];
@@ -17,6 +18,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
     title,
     imageUrl,
     videoUrl,
+    demoUrl,
     description,
     projectUrl,
     tags,
@@ -84,6 +86,11 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
                     )}
                 </div>
             </a>
+            {demoUrl && (
+                <a className="project-demo" href={demoUrl} target="_blank" rel="noopener noreferrer">
+                    Watch demo &rarr;
+                </a>
+            )}
         </div>
     );
 };

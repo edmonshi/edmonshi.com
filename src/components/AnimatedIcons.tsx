@@ -81,3 +81,10 @@ export const AutomataIcon = () => (
     )))}
   </svg>
 );
+
+export const CombadgeIcon = () => (
+  <svg viewBox="0 0 24 24" className="project-icon-svg" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M12 3 20 21 12 16 4 21Z" />
+    <path d="M12 8v5M10 11h4" />
+  </svg>
+);

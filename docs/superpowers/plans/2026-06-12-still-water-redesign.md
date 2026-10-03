@@ -695,7 +695,6 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import ProjectPanel from "./components/ProjectPanel";
 import { useEffect } from "react";
-import { skills } from "./data/skills";
 import ASCIIKoiPond from "./components/ASCIIKoiPond";
 import WaterScene from "./components/WaterScene";
 import { ChessIcon, OrbitIcon, AutomataIcon } from "./components/AnimatedIcons";
@@ -756,20 +755,6 @@ const App: React.FC = () => {
               {aboutParagraphs.map((p, i) => (<p key={i}>{p}</p>))}
             </div>
             <img src="/photo.jpg" id="headshot" alt="Edmon Shi" />
-          </div>
-          <div id="skills-bar">
-            <div className="skills-track">
-              {[...skills, ...skills].map((skill, index) => (
-                <span key={index} className="skill-item">
-                  <div className="skill-icon-container">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d={skill.path} fill={skill.color} fillRule="evenodd" />
-                    </svg>
-                  </div>
-                  {skill.name}
-                </span>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -999,7 +984,7 @@ body.cursor-on .cursor-dot, body.cursor-on .cursor-ring { opacity: 1; }
 .cursor-ring--hover { width: 44px; height: 44px; border-color: rgba(100, 255, 218, 0.9); }
 ```
 
-And REMOVE `transform: translateY(-10px);` from `.project-panel:hover` (GSAP owns the card transform now; keep the border/shadow lines). Add nav underline + marquee polish:
+And REMOVE `transform: translateY(-10px);` from `.project-panel:hover` (GSAP owns the card transform now; keep the border/shadow lines). Add nav underline polish:
 
 ```css
 nav a { position: relative; }
@@ -1011,18 +996,14 @@ nav a::after {
 }
 nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 
-#skills-bar:hover .skills-track { animation-play-state: paused; }
-.skill-item:hover .skill-icon-container svg {
-  filter: drop-shadow(0 0 6px rgba(100, 255, 218, 0.6));
-}
 ```
 
-- [ ] **Step 5: Verify** — build/lint green. Browse-check (desktop): ring lags dot; ring expands over CTA/nav/cards; CTA shifts toward cursor and springs back; cards tilt; marquee pauses on hover. Mobile viewport (375px): `page.emulateMedia` won't change pointer — instead assert `.cursor-dot` doesn't render under `--blink-settings` touch emulation (the existing Playwright launch flags already force `primaryPointerType=4`... verify on desktop config instead: temporarily evaluate `matchMedia('(pointer: fine)').matches` and confirm the component honors it). Console clean.
+- [ ] **Step 5: Verify** — build/lint green. Browse-check (desktop): ring lags dot; ring expands over CTA/nav/cards; CTA shifts toward cursor and springs back; cards tilt. Mobile viewport (375px): `page.emulateMedia` won't change pointer — instead assert `.cursor-dot` doesn't render under `--blink-settings` touch emulation (the existing Playwright launch flags already force `primaryPointerType=4`... verify on desktop config instead: temporarily evaluate `matchMedia('(pointer: fine)').matches` and confirm the component honors it). Console clean.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add -A && git commit -m "Custom cursor, magnetic CTA, card tilt, nav underline, marquee polish"
+git add -A && git commit -m "Custom cursor, magnetic CTA, card tilt, nav underline"
 ```
 
 ---
@@ -1179,6 +1160,6 @@ git add -A && git commit -m "Add verification script; mobile and reduced-motion 
 
 ## Self-review notes
 
-- **Spec coverage:** caustics/rays/depth/hue (T4), particles+parallax (T5), ripples click+cursor (T4, pond T2), fish startle/curiosity/investigate/migration (T6), SplitText reveals + hero + ghost numerals + rules + depth line (T7), cursor/magnetic/tilt/nav/marquee (T8), grain (T9), Pretext removal (T7), Lenis (T3), reduced motion + touch + DPR + visibility pause + context loss (T2/T4/T6/T8), verification matrix + Lighthouse (T10). Skills marquee kept (unchanged markup, polish in T8). Error handling: WebGL death → `setDead` + CSS body-gradient fallback (T4).
+- **Spec coverage:** caustics/rays/depth/hue (T4), particles+parallax (T5), ripples click+cursor (T4, pond T2), fish startle/curiosity/investigate/migration (T6), SplitText reveals + hero + ghost numerals + rules + depth line (T7), cursor/magnetic/tilt/nav (T8), grain (T9), Pretext removal (T7), Lenis (T3), reduced motion + touch + DPR + visibility pause + context loss (T2/T4/T6/T8), verification matrix + Lighthouse (T10). Error handling: WebGL death → `setDead` + CSS body-gradient fallback (T4).
 - **Type consistency:** `pond`/`initPond`/`tickPond`/`PondRipple`/`RIPPLE_LIFE_S` (T2) match usages in T4/T5/T6. `scrollToSection`/`lenis` (T3) match T7 App.tsx. `heroIntro`/`initSectionReveals`/`initMagnetic`/`initTilt` (T7/T8) match App.tsx wiring.
 - **Known judgment calls:** shader constants (opacities, speeds) are starting values — tasks instruct visual verification and tuning is expected; headless FPS threshold set at 45 because software GL underreports real hardware.

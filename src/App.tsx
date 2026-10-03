@@ -2,8 +2,7 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import ProjectTimeline from "./components/ProjectTimeline";
 import { lazy, Suspense, useEffect } from "react";
-import { skills } from "./data/skills";
-import ASCIIKoiPond from "./components/ASCIIKoiPond";
+const BettaScene = lazy(() => import("./components/BettaScene"));
 const WaterScene = lazy(() => import("./components/WaterScene"));
 import { initPond } from "./anim/pond";
 import { useLenis, scrollToSection } from "./anim/useLenis";
@@ -49,7 +48,7 @@ const App: React.FC = () => {
           <p id="greeting">Hi, my name is</p>
           <h1 id="intro">Edmon Shi.</h1>
           <h2 id="subtitle">Software Engineering Student at the University of Waterloo.</h2>
-          <a href="#portfolio" id="cta-button" className="primary-button" data-magnetic
+          <a href="#portfolio" id="cta-button" className="primary-button"
             onClick={(e) => { e.preventDefault(); scrollToSection("portfolio"); }}>
             See what I've built
           </a>
@@ -84,20 +83,6 @@ const App: React.FC = () => {
             </div>
             <img src="/photo.jpg" id="headshot" alt="Edmon Shi" />
           </div>
-          <div id="skills-bar">
-            <div className="skills-track">
-              {[...skills, ...skills].map((skill, index) => (
-                <span key={index} className="skill-item">
-                  <div className="skill-icon-container">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d={skill.path} fill={skill.color} fillRule="evenodd" />
-                    </svg>
-                  </div>
-                  {skill.name}
-                </span>
-              ))}
-            </div>
-          </div>
         </section>
 
         <ProjectTimeline />
@@ -105,11 +90,10 @@ const App: React.FC = () => {
 
       <footer>
         <p>Made with 🗿 by Edmon Shi</p>
-        <p className="footer-tech">React · Three.js · GSAP — and one very territorial betta</p>
       </footer>
       <div id="grain" aria-hidden="true" />
       <div id="depth-line" aria-hidden="true" />
-      {SHOW_FISH && <ASCIIKoiPond />}
+      {SHOW_FISH && <Suspense fallback={null}><BettaScene /></Suspense>}
       {SHOW_WATER && <Suspense fallback={null}><WaterScene /></Suspense>}
     </div>
   );

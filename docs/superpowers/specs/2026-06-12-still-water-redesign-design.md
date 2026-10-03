@@ -51,7 +51,7 @@ system). React 19 + Vite + TypeScript stay. JS budget: ≤ +160KB gzip over curr
      curiously toward an idle cursor; swims to investigate click-ripples.
    - *Scroll migration:* each section defines a preferred region; the fish swims
      there as sections enter view, never overlapping primary content.
-3. **Content** — existing copy, headshot, skills marquee, 3 project panels,
+3. **Content** — existing copy, headshot, 3 project panels,
    restyled per "Typography & motion" below.
 4. **Foreground** — film grain overlay at ~3% opacity (CSS or tiny canvas), and a
    custom cursor: 6px mint dot + lagging ~28px ring; ring expands over
@@ -71,7 +71,6 @@ system). React 19 + Vite + TypeScript stay. JS budget: ≤ +160KB gzip over curr
 - CTA button: magnetic — translates toward cursor within ~60px radius, springs
   back on leave.
 - Project cards: tilt ≤4° toward cursor, video brightens on hover, tags stagger in.
-- Skills marquee kept, refined: pauses on hover, subtle mint glow on hovered icon.
 - Scroll progress: 1px mint "depth line" along the right viewport edge.
 - One easing vocabulary (e.g. `power3.out` for reveals, `expo.out` for masks)
   defined once in `src/anim/reveals.ts` and reused everywhere.

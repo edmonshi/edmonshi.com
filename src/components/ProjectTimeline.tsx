@@ -1,13 +1,15 @@
 // src/components/ProjectTimeline.tsx
 // Desktop: a horizontal timeline pinned by ScrollTrigger — vertical page scroll
-// scrubs the track left/right. Each project is a node on the axis; hovering its
-// name unfolds a detail card (video + description + tags) below the axis.
+// scrubs the track left/right. Each project has an expanded detail card
+// (video + description + tags) below its node on the axis.
 // Touch / narrow / reduced-motion: falls back to the stacked card grid.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import ProjectPanel from './ProjectPanel'
-import { ChessIcon, OrbitIcon, AutomataIcon } from './AnimatedIcons'
+import { lenis } from '../anim/useLenis'
+import { ChessIcon, OrbitIcon, AutomataIcon, CombadgeIcon } from './AnimatedIcons'
+import combadgeImage from '../assets/combadge.jpg'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -17,7 +19,9 @@ interface Project {
   description: string
   projectUrl: string
   tags: string[]
-  videoUrl: string
+  videoUrl?: string
+  imageUrl?: string
+  demoUrl?: string
   icon: ReactNode
   pos: number // 0..1 position along the track
 }
@@ -27,7 +31,7 @@ const PROJECTS: Project[] = [
   {
     title: 'Cellular Automata',
     year: '2023',
-    pos: 0.16, // track positions: oldest near left, newest scrolls to center
+    pos: 0.14, // track positions: oldest near left, newest scrolls to center
     icon: <AutomataIcon />,
     videoUrl: 'https://github.com/user-attachments/assets/e8ad756c-e660-4cc6-a8f8-0787dc30417c',
     description: "A simulator for various cellular automata rulesets, including Conway's Game of Life and Brian's Brain.",
@@ -37,7 +41,7 @@ const PROJECTS: Project[] = [
   {
     title: 'Celestial Simulator',
     year: '2024',
-    pos: 0.45,
+    pos: 0.36,
     icon: <OrbitIcon />,
     videoUrl: 'https://github.com/exisodd/celestial-simulator/assets/96459404/30d4bb50-aad8-489f-a7cc-1052034a7dfe',
     description: '3D N-Body gravity simulation with Barnes-Hut optimization. Visualizes gravitational fields in real-time.',
@@ -47,25 +51,44 @@ const PROJECTS: Project[] = [
   {
     title: 'Autonomous Chessboard',
     year: '2024',
-    pos: 0.74,
+    pos: 0.58,
     icon: <ChessIcon />,
     videoUrl: '/chessboard.mp4',
     description: 'A robotic chessboard that tracks pieces using Hall effect sensors and plays against humans using Stockfish. Features a CoreXY motion system.',
     projectUrl: 'https://git.uwaterloo.ca/b27dai/se101_group_project',
     tags: ['C', 'JS', 'WebSockets', 'Robotics'],
   },
+  {
+    title: 'Combadge',
+    year: '2026',
+    pos: 0.8,
+    icon: <CombadgeIcon />,
+    imageUrl: combadgeImage,
+    demoUrl: 'https://www.youtube.com/watch?v=ZbD7XTCFx-I',
+    description: 'A Star Trek-inspired wearable AI communicator built on Raspberry Pi 5 and QNX. Combines voice, camera vision, and tools for web search, email, calendars, and shopping. Hack the North 2026 winner and QNX award winner.',
+    projectUrl: 'https://devpost.com/software/combadge',
+    tags: ['C', 'Python', 'QNX', 'Raspberry Pi', 'OpenAI'],
+  },
 ]
 
-const HORIZONTAL_QUERY = '(min-width: 900px) and (pointer: fine)'
+const HORIZONTAL_QUERY = '(min-width: 900px) and (min-height: 620px) and (pointer: fine)'
 
 function Station({ p }: { p: Project }) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) video.play().catch(() => {})
+      else video.pause()
+    })
+    observer.observe(video)
+    return () => { observer.disconnect(); video.pause() }
+  }, [])
   return (
     <div
       className="tl-station"
       style={{ left: `${p.pos * 100}%` }}
-      onMouseEnter={() => videoRef.current?.play().catch(() => {})}
-      onMouseLeave={() => videoRef.current?.pause()}
     >
       <a className="tl-label" href={p.projectUrl} target="_blank" rel="noopener noreferrer">
         <span className="tl-year">{p.year}</span>
@@ -76,12 +99,17 @@ function Station({ p }: { p: Project }) {
       <span className="tl-connector-down" aria-hidden="true" />
       <div className="tl-card">
         <div className="tl-card-media">
-          <video ref={videoRef} src={p.videoUrl} loop muted playsInline preload="none" />
+          {p.videoUrl ? (
+            <video ref={videoRef} src={p.videoUrl} loop muted playsInline preload="none" />
+          ) : (
+            <img src={p.imageUrl} alt={p.title} loading="lazy" />
+          )}
         </div>
         <p className="tl-card-desc">{p.description}</p>
         <div className="tl-card-tags">
           {p.tags.map(t => <span key={t} className="tech-tag">{t}</span>)}
         </div>
+        {p.demoUrl && <a className="project-demo" href={p.demoUrl} target="_blank" rel="noopener noreferrer">Watch demo &rarr;</a>}
       </div>
     </div>
   )
@@ -94,12 +122,16 @@ export default function ProjectTimeline() {
 
   // Decide layout mode at mount and on viewport/pointer changes.
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     const mq = window.matchMedia(HORIZONTAL_QUERY)
-    const update = () => setHorizontal(mq.matches && !reduced)
+    const update = () => setHorizontal(mq.matches && !reduced.matches)
     update()
     mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
+    reduced.addEventListener('change', update)
+    return () => {
+      mq.removeEventListener('change', update)
+      reduced.removeEventListener('change', update)
+    }
   }, [])
 
   // Pin the section and scrub the track horizontally with scroll.
@@ -107,38 +139,32 @@ export default function ProjectTimeline() {
     if (!horizontal) return
     const section = sectionRef.current!
     const track = trackRef.current!
-    // Translate just enough to bring the LAST node to window center. A station's
-    // offsetLeft is its node point (the -50% transform doesn't affect layout
-    // offset); the track sits inside .tl-viewport, which is inset from the window
-    // edges by the page container, so fold that inset in or the node lands short.
-    const centerLast = () => {
-      const stations = track.querySelectorAll<HTMLElement>('.tl-station')
-      const last = stations[stations.length - 1]
-      if (!last) return 0
-      const inset = (track.parentElement?.getBoundingClientRect().left) ?? 0
-      return Math.max(0, inset + last.offsetLeft - window.innerWidth / 2)
+    // Reach the end marker as well as the final expanded project card.
+    const endTravel = () => {
+      const endpoint = track.querySelector<HTMLElement>('.tl-end')
+      const viewport = track.parentElement
+      if (!endpoint || !viewport) return 0
+      return Math.max(0, endpoint.offsetLeft - viewport.clientWidth / 2)
     }
-    // A trailing "dwell": extra pinned scroll where the track holds at the centered
-    // end, so scrub (which lags ~0.6s) actually settles there and you can rest on
-    // the last project instead of it scrolling past at ~62% before catching up.
     const TAIL = 0.18
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top top',
-          end: () => '+=' + (centerLast() / (1 - TAIL)),
+          end: () => '+=' + (endTravel() / (1 - TAIL)),
           pin: true,
           scrub: 0.6,
           invalidateOnRefresh: true,
           anticipatePin: 1,
         },
       })
-      tl.to(track, { x: () => -centerLast(), ease: 'none', duration: 1 - TAIL })
-        .to(track, { x: () => -centerLast(), ease: 'none', duration: TAIL }) // hold centered
+      tl.to(track, { x: () => -endTravel(), ease: 'none', duration: 1 - TAIL })
+        .to(track, { x: () => -endTravel(), ease: 'none', duration: TAIL }) // hold centered
     }, section)
     ScrollTrigger.refresh()
-    return () => ctx.revert()
+    lenis?.resize()
+    return () => { ctx.revert(); lenis?.resize() }
   }, [horizontal])
 
   return (
@@ -158,7 +184,7 @@ export default function ProjectTimeline() {
               className="tl-end"
               aria-hidden="true"
               // Fixed px gap from the last project, not a track %: the track is
-              // 190vw (scales with window) but the viewport is a fixed max-width,
+              // fixed-width, and the viewport is a fixed max-width,
               // so a % offset clips off-screen on wide (1440p+) monitors.
               style={{ left: `calc(${PROJECTS[PROJECTS.length - 1].pos * 100}% + 260px)` }}
             >
@@ -178,6 +204,8 @@ export default function ProjectTimeline() {
               icon={p.icon}
               year={p.year}
               videoUrl={p.videoUrl}
+              imageUrl={p.imageUrl}
+              demoUrl={p.demoUrl}
               description={p.description}
               projectUrl={p.projectUrl}
               tags={p.tags}
