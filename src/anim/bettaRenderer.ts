@@ -4,135 +4,108 @@ import {createBettaMotion, type BettaInput} from './bettaMotion'
 
 const CELL=new THREE.Vector2(4,6)
 const CHARACTERS=' .:-=+*#%@01o'
-// ponytail: high-DPI output gets a 1.5M pixel budget; raise for faster GPUs.
-function pixelRatio(w:number,h:number){
-  return Math.max(1,Math.min(window.devicePixelRatio||1,2,Math.sqrt(1_500_000/(w*h))))
+function pixelRatio(){return window.devicePixelRatio||1}
+function hash(x:number,y:number){
+  const n=Math.sin(x*127.1+y*311.7)*43758.5453
+  return n-Math.floor(n)
 }
-const POST_VERTEX=`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`
-const POST_FRAGMENT=`
-  varying vec2 vUv;
-  uniform sampler2D uFish,uGlyphs;
-  uniform vec2 uResolution,uCell,uCursor;
-  uniform float uTime;
-  uniform vec3 uRipples[16];
-  uniform vec4 uBubbles[24];
-  uniform int uRippleCount,uBubbleCount;
-  float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-  float glyph(float index,vec2 p){ return texture2D(uGlyphs,vec2((index+p.x)/13.0,p.y)).a; }
-  void main(){
-    vec2 pixel=vUv*uResolution;
-    vec2 cell=floor(pixel/uCell);
-    vec2 center=(cell+0.5)*uCell;
-    vec2 local=fract(pixel/uCell);
-    vec4 fish=texture2D(uFish,center/uResolution);
-    float noise=hash(cell);
-    float field=noise<0.36?0.018:0.0;
-    if(uCursor.x>=0.0) field+=max(0.0,1.0-distance(center,uCursor)/75.0)*0.045;
-    for(int i=0;i<16;i++){
-      if(i>=uRippleCount) break;
-      float age=uRipples[i].z;
-      if(age>=0.0 && age<4.0){
-        float d=distance(center,uRipples[i].xy);
-        float ring=abs(d-age*60.0);
-        field+=max(0.0,1.0-ring/(14.0+age*9.0))*pow(1.0-age/4.0,2.0)*0.14;
-      }
-    }
-    float index=10.0+step(0.5,hash(cell+floor(uTime*0.25)));
-    float alpha=field*glyph(index,local);
-    if(fish.a>0.055){
-      float brightness=clamp(max(fish.r,max(fish.g,fish.b))/max(fish.a,0.12),0.0,1.0);
-      index=clamp(floor(brightness*10.0),1.0,9.0);
-      alpha=max(alpha,glyph(index,local)*fish.a*0.57);
-    }
-    for(int i=0;i<24;i++){
-      if(i>=uBubbleCount) break;
-      vec4 b=uBubbles[i];
-      float ring=abs(distance(center,b.xy)-b.z);
-      alpha=max(alpha,glyph(12.0,local)*b.w*max(0.0,1.0-ring/3.0));
-    }
-    gl_FragColor=vec4(0.54,0.86,0.76,alpha);
-  }
-`
-
-function glyphTexture(){
-  const canvas=document.createElement('canvas')
-  canvas.width=CHARACTERS.length*24;canvas.height=32
-  const ctx=canvas.getContext('2d')!
-  ctx.font='26px monospace';ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.textAlign='center'
-  for(let i=0;i<CHARACTERS.length;i++) ctx.fillText(CHARACTERS[i],i*24+12,16)
-  const texture=new THREE.CanvasTexture(canvas)
-  texture.minFilter=texture.magFilter=THREE.LinearFilter
-  texture.generateMipmaps=false
-  return texture
+function textStyle(ctx:CanvasRenderingContext2D,dpr:number){
+  ctx.setTransform(dpr,0,0,dpr,0,0)
+  ctx.font=`${CELL.y}px monospace`;ctx.textBaseline='middle';ctx.textAlign='center'
+  ctx.fillStyle='rgb(138,219,194)'
 }
-
 interface Bubble {x:number;y:number;vx:number;vy:number;birth:number;life:number}
 
 export function createBettaRenderer(canvas:HTMLCanvasElement){
-  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false,powerPreference:'low-power'})
+  // Keep the anatomy on the GPU, but draw the visible characters as native text.
+  // A small cell-sized readback avoids rendering a blurry full-screen bitmap.
+  const gpuCanvas=document.createElement('canvas')
+  const renderer=new THREE.WebGLRenderer({canvas:gpuCanvas,alpha:true,antialias:false,powerPreference:'low-power'})
   renderer.setClearColor(0x000000,0)
+  const ctx=canvas.getContext('2d')!
+  const background=document.createElement('canvas'),bg=background.getContext('2d')!
+  const lost=(event:Event)=>{event.preventDefault();canvas.dispatchEvent(new Event('webglcontextlost',{cancelable:true}))}
+  gpuCanvas.addEventListener('webglcontextlost',lost)
   const rig=createBettaRig(),motion=createBettaMotion()
   const scene=new THREE.Scene();scene.add(rig.group)
   const camera=new THREE.OrthographicCamera(-1,1,1,-1,0.1,20)
   camera.position.z=8
   const target=new THREE.WebGLRenderTarget(1,1,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:true})
-  const atlas=glyphTexture()
-  const uniforms={
-    uFish:{value:target.texture},uGlyphs:{value:atlas},
-    uResolution:{value:new THREE.Vector2(1,1)},uCell:{value:CELL},uTime:{value:0},
-    uCursor:{value:new THREE.Vector2(-9999,-9999)},
-    uRippleCount:{value:0},uRipples:{value:Array.from({length:16},()=>new THREE.Vector3(0,0,-1))},
-    uBubbleCount:{value:0},uBubbles:{value:Array.from({length:24},()=>new THREE.Vector4())},
-  }
-  const postScene=new THREE.Scene(),postCamera=new THREE.Camera()
-  const postGeometry=new THREE.PlaneGeometry(2,2)
-  const postMaterial=new THREE.ShaderMaterial({vertexShader:POST_VERTEX,fragmentShader:POST_FRAGMENT,uniforms,transparent:true,depthTest:false,depthWrite:false})
-  postScene.add(new THREE.Mesh(postGeometry,postMaterial))
-  let height=1,lastBubble=0
+  let width=1,height=1,lastBubble=0,cols=1,rows=1
+  let pixels=new Uint8Array(4)
+  let fieldGlyphs=new Uint8Array(1)
   const bubbles:Bubble[]=[]
 
   function resize(w:number,h:number){
-    height=h
+    width=w;height=h
     const scale=Math.min(185,w/3.5,h/3.2)
     camera.left=-w/scale/2;camera.right=w/scale/2
     camera.top=h/scale/2;camera.bottom=-h/scale/2;camera.updateProjectionMatrix()
-    // Keep the glyphs sharp on high-DPI screens without enlarging the fish.
-    renderer.setPixelRatio(pixelRatio(w,h))
-    renderer.setSize(w,h,false)
-    // The 3D pass has one pixel per ASCII cell, not one per screen pixel.
-    target.setSize(Math.ceil(w/CELL.x),Math.ceil(h/CELL.y))
-    uniforms.uResolution.value.set(w,h)
+    const dpr=pixelRatio()
+    canvas.width=background.width=Math.floor(w*dpr)
+    canvas.height=background.height=Math.floor(h*dpr)
+    textStyle(ctx,dpr);textStyle(bg,dpr)
+    cols=Math.ceil(w/CELL.x);rows=Math.ceil(h/CELL.y)
+    renderer.setSize(cols,rows,false);target.setSize(cols,rows)
+    pixels=new Uint8Array(cols*rows*4);fieldGlyphs=new Uint8Array(cols*rows)
+    // Cache the faint pond pattern; only the fish and interactive water redraw.
+    bg.globalAlpha=0.018
+    for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+      const glyph=hash(col+1,row+1)<0.5?10:11
+      fieldGlyphs[row*cols+col]=glyph
+      if(hash(col,row)<0.36)bg.fillText(CHARACTERS[glyph],(col+0.5)*CELL.x,h-(row+0.5)*CELL.y)
+    }
     motion.resize(w,h,scale)
+  }
+
+  function drawField(x:number,y:number,radius:number,opacity:(distance:number)=>number,glyph?:string){
+    const left=Math.max(0,Math.floor((x-radius)/CELL.x)),right=Math.min(cols-1,Math.ceil((x+radius)/CELL.x))
+    const bottom=Math.max(0,Math.floor((height-y-radius)/CELL.y)),top=Math.min(rows-1,Math.ceil((height-y+radius)/CELL.y))
+    for(let row=bottom;row<=top;row++)for(let col=left;col<=right;col++){
+      const cx=(col+0.5)*CELL.x,cy=height-(row+0.5)*CELL.y
+      const alpha=opacity(Math.hypot(cx-x,cy-y))
+      if(alpha<=0)continue
+      ctx.globalAlpha=alpha;ctx.fillText(glyph??CHARACTERS[fieldGlyphs[row*cols+col]],cx,cy)
+    }
   }
 
   function frame(now:number,dt:number,input:BettaInput){
     const pose=motion.update(dt,now,input)
     rig.group.position.copy(pose.position);rig.group.quaternion.copy(pose.rotation)
     rig.animate(pose.time,pose.phase,pose.effort,pose.turn,pose.swim,pose.joints)
-    uniforms.uTime.value=pose.time
-    uniforms.uCursor.value.set(input.cursor.x,height-input.cursor.y)
-    const ripples=input.reducedMotion?[]:input.ripples
-    uniforms.uRippleCount.value=ripples.length
-    for(let i=0;i<ripples.length;i++) uniforms.uRipples.value[i].set(ripples[i].x,height-ripples[i].y,(now-ripples[i].birth)/1000)
+    renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera)
+    renderer.readRenderTargetPixels(target,0,0,cols,rows,pixels)
+    ctx.clearRect(0,0,width,height);ctx.globalAlpha=1
+    ctx.drawImage(background,0,0,background.width,background.height,0,0,width,height)
+    if(input.cursor.x>-9000)drawField(input.cursor.x,input.cursor.y,75,d=>Math.max(0,1-d/75)*0.045)
+    if(!input.reducedMotion)for(const ripple of input.ripples){
+      const age=(now-ripple.birth)/1000
+      if(age<0||age>=4)continue
+      const radius=age*60,thickness=14+age*9
+      drawField(ripple.x,ripple.y,radius+thickness,d=>Math.max(0,1-Math.abs(d-radius)/thickness)*Math.pow(1-age/4,2)*0.14)
+    }
     if(!input.reducedMotion && input.cursor.x>-9000 && input.cursor.speed>0.25 && bubbles.length<24 && now-lastBubble>90){
       lastBubble=now
-      bubbles.push({x:input.cursor.x,y:height-input.cursor.y,vx:(Math.random()-0.5)*10,vy:22+Math.random()*18,birth:now,life:1400+Math.random()*500})
+      bubbles.push({x:input.cursor.x,y:input.cursor.y,vx:(Math.random()-0.5)*10,vy:22+Math.random()*18,birth:now,life:1400+Math.random()*500})
     }
     for(let i=bubbles.length-1;i>=0;i--){
       const b=bubbles[i]
       if(now-b.birth>b.life || input.reducedMotion){bubbles.splice(i,1);continue}
-      b.x+=b.vx*dt;b.y+=b.vy*dt;b.vy+=8*dt
+      b.x+=b.vx*dt;b.y-=b.vy*dt;b.vy+=8*dt
+      const age=(now-b.birth)/b.life,radius=3+age*3
+      drawField(b.x,b.y,radius+3,d=>0.24*Math.sin(age*Math.PI)*Math.max(0,1-Math.abs(d-radius)/3),'o')
     }
-    uniforms.uBubbleCount.value=bubbles.length
-    for(let i=0;i<bubbles.length;i++){
-      const b=bubbles[i],age=(now-b.birth)/b.life
-      uniforms.uBubbles.value[i].set(b.x,b.y,3+age*3,0.24*Math.sin(age*Math.PI))
+    for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+      const p=(row*cols+col)*4,alpha=pixels[p+3]/255
+      if(alpha<=0.055)continue
+      const brightness=Math.min(1,Math.max(pixels[p],pixels[p+1],pixels[p+2])/255/Math.max(alpha,0.12))
+      ctx.globalAlpha=alpha*0.57
+      ctx.fillText(CHARACTERS[Math.max(1,Math.min(9,Math.floor(brightness*10)))],(col+0.5)*CELL.x,height-(row+0.5)*CELL.y)
     }
-    renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera)
-    renderer.setRenderTarget(null);renderer.clear();renderer.render(postScene,postCamera)
   }
   function dispose(){
-    rig.dispose();target.dispose();atlas.dispose();postGeometry.dispose();postMaterial.dispose();renderer.dispose()
+    gpuCanvas.removeEventListener('webglcontextlost',lost)
+    rig.dispose();target.dispose();renderer.dispose()
   }
   return {resize,frame,dispose}
 }
@@ -141,7 +114,7 @@ export function createBettaRenderer(canvas:HTMLCanvasElement){
 // This keeps a fish on the page without reviving the old engine or motion.
 export function drawBettaFallback(canvas:HTMLCanvasElement,w:number,h:number){
   const rig=createBettaRig(),ctx=canvas.getContext('2d')!
-  const dpr=pixelRatio(w,h)
+  const dpr=pixelRatio()
   canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr)
   ctx.scale(dpr,dpr)
   const sample=document.createElement('canvas');sample.width=w;sample.height=h

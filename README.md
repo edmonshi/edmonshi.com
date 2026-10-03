@@ -20,7 +20,7 @@ My personal portfolio website showcasing my journey as a Software Engineering st
 - **Styling:** CSS3 with custom animations
 - **Build Tool:** Vite
 - **Animations:** GSAP, Lenis, CSS keyframes, and GPU fin deformation
-- **Background Effects:** Three.js, WebGL2, and an ASCII post-processing shader
+- **Background Effects:** Three.js/WebGL2 fish anatomy with native Canvas 2D ASCII text at full screen pixel density
 - **Icons:** Font Awesome SVGs
 
 ## 🎯 Projects Featured

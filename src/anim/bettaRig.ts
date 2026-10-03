@@ -265,12 +265,14 @@ export function createBettaRig():BettaRig {
       return {anchor,p:[anchor[0]-(0.20+spread)*r,anchor[1]-0.54*r,anchor[2]+side*0.018*r]}
     }),side===1?6:7)
 
-    // Raised iris and a dark pupil make the head legible in the ASCII pass.
-    const eye=new THREE.SphereGeometry(0.040,12,8)
-    eye.translate(0.46,0.055,side*0.105)
+    // Small, shallow eyes follow the head surface rather than bulging out.
+    const eye=new THREE.SphereGeometry(0.026,12,8)
+    eye.scale(1,1,0.30)
+    eye.translate(0.46,0.045,side*0.078)
     add(rigidAttributes(eye),8)
-    const pupil=new THREE.SphereGeometry(0.023,10,6)
-    pupil.translate(0.468,0.055,side*0.132)
+    const pupil=new THREE.SphereGeometry(0.013,10,6)
+    pupil.scale(1,1,0.20)
+    pupil.translate(0.463,0.045,side*0.085)
     add(rigidAttributes(pupil),9)
     const gillPoints=[]
     for(let i=0;i<=12;i++) {
