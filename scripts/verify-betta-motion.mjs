@@ -76,6 +76,21 @@ try {
           cases++
         }
       }
+      // Follow a fast-moving pointer without waiting for it to become idle.
+      const follower=createBettaMotion()
+      follower.resize(1440,900,185)
+      const followInput={cursor:{x:1180,y:440,speed:2,idleMs:0},section:0,reducedMotion:false,ripples:[]}
+      let followTime=0
+      for(const x of [1180,250]) {
+        followInput.cursor.x=x
+        const distance=()=>Math.hypot(follower.pose().position.x*185+720-x,450-follower.pose().position.y*185-440)
+        const before=distance()
+        for(let frame=0;frame<60*40;frame++) {
+          followTime+=1000/60
+          follower.update(1/60,followTime,followInput)
+        }
+        if(distance()>175 || distance()>before-50) throw Error('Fish does not approach and settle near the moving cursor')
+      }
     } finally { Math.random = originalRandom }
     if (idleFrames < 100 || activeFrames < 100) throw Error('Missing rest or active swimming coverage')
     if (maxTailLag < 1.3 || halfTurnFrames < 100) throw Error('Missing the deeper trailing bend during turns')

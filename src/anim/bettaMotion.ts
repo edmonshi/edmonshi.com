@@ -31,7 +31,7 @@ export function createBettaMotion() {
   const jointElevations=new Float64Array(8).fill(elevation)
   const path=[{distance:-2,heading,elevation},{distance:0,heading,elevation}]
   const straightDirection=new THREE.Vector3()
-  let section=0,lastStartle=-Infinity,lastRipple=-Infinity,time=0
+  let section=0,lastRipple=-Infinity,time=0
 
   function clampGoal() {
     const mx=Math.max(0.15,width/2-Math.min(1.65,width*0.46))
@@ -71,11 +71,11 @@ export function createBettaMotion() {
     clampGoal()
   }
 
-  function flee(x:number,y:number,now:number) {
+  function flee(x:number,y:number) {
     const dx=position.x-x,dy=position.y-y
     const distance=Math.hypot(dx,dy)||1
     destination.set(position.x+dx/distance*1.8,position.y+dy/distance*0.9,position.z-0.15)
-    clampGoal(); mode='flee'; remaining=1.0; lastStartle=now
+    clampGoal(); mode='flee'; remaining=1.0
   }
 
   function update(dt:number,now:number,input:BettaInput) {
@@ -86,22 +86,26 @@ export function createBettaMotion() {
     }
     const mx=(input.cursor.x-windowWidth()/2)/pixelScale
     const my=(windowHeight()/2-input.cursor.y)/pixelScale
-    const cursorDistance=Math.hypot(position.x-mx,position.y-my)
-    if(input.cursor.x>-9000 && input.cursor.speed>0.9 && cursorDistance*pixelScale<170 && now-lastStartle>1800) flee(mx,my,now)
     for(const ripple of input.ripples) {
       if(ripple.birth>lastRipple) {
         lastRipple=ripple.birth
         const rx=(ripple.x-windowWidth()/2)/pixelScale,ry=(windowHeight()/2-ripple.y)/pixelScale
-        if(now-ripple.birth<400 && Math.hypot(position.x-rx,position.y-ry)*pixelScale<220) flee(rx,ry,now)
+        if(now-ripple.birth<400 && Math.hypot(position.x-rx,position.y-ry)*pixelScale<220) flee(rx,ry)
       }
     }
     if(remaining<=0) {
       if(mode==='hover') { mode='swim'; remaining=5+Math.random()*5; chooseDestination(section) }
       else { mode='hover'; remaining=2+Math.random()*3; destination.copy(position) }
     }
-    if(mode==='swim' && input.cursor.x>-9000 && input.cursor.idleMs>2500 && cursorDistance*pixelScale<650) {
-      // A slow inspection stops short of the pointer instead of orbiting it.
-      destination.set(mx+(position.x>mx?0.65:-0.65),my,-0.15); clampGoal()
+    if(input.cursor.x>-9000 && mode!=='flee') {
+      // Follow a moving or resting pointer, leaving room for the snout.
+      destination.set(mx,my,-0.15)
+      desired.copy(destination).sub(position)
+      const distance=desired.length()
+      if(distance>0) destination.addScaledVector(desired,-Math.min(0.65,distance)/distance)
+      clampGoal()
+      mode=position.distanceTo(destination)>0.22?'swim':'hover'
+      remaining=7
     }
     const distance=desired.copy(destination).sub(position).length()
     if(mode==='swim' && distance<0.22) { mode='hover'; remaining=2+Math.random()*2; destination.copy(position) }

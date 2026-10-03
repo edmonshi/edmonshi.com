@@ -26,7 +26,7 @@ try {
     const results = []
     try {
       for (const [viewport, w, h, scale] of [['desktop', 1440, 900, 185], ['mobile', 375, 812, 375 / 3.5]]) {
-        const cols = Math.ceil(w / 6), rows = Math.ceil(h / 8)
+        const cols = Math.ceil(w / 4), rows = Math.ceil(h / 6)
         const target = new THREE.WebGLRenderTarget(cols, rows)
         const camera = new THREE.OrthographicCamera(-w / scale / 2, w / scale / 2, h / scale / 2, -h / scale / 2, 0.1, 20)
         camera.position.z = 8

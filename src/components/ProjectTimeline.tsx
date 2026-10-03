@@ -7,9 +7,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import ProjectPanel from './ProjectPanel'
+import ProjectMedia from './ProjectMedia'
 import { lenis } from '../anim/useLenis'
 import { ChessIcon, OrbitIcon, AutomataIcon, CombadgeIcon } from './AnimatedIcons'
 import combadgeImage from '../assets/combadge.jpg'
+import automataVideo from '../assets/cellular-automata.mp4'
+import celestialVideo from '../assets/celestial-simulator.mp4'
+import chessboardVideo from '../assets/chessboard.mp4'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -33,7 +37,7 @@ const PROJECTS: Project[] = [
     year: '2023',
     pos: 0.14, // track positions: oldest near left, newest scrolls to center
     icon: <AutomataIcon />,
-    videoUrl: 'https://github.com/user-attachments/assets/e8ad756c-e660-4cc6-a8f8-0787dc30417c',
+    videoUrl: automataVideo,
     description: "A simulator for various cellular automata rulesets, including Conway's Game of Life and Brian's Brain.",
     projectUrl: 'https://github.com/edmonshi/Cellular-Automata-Simulator',
     tags: ['Java', 'JavaFX', 'Simulation'],
@@ -43,7 +47,7 @@ const PROJECTS: Project[] = [
     year: '2024',
     pos: 0.36,
     icon: <OrbitIcon />,
-    videoUrl: 'https://github.com/exisodd/celestial-simulator/assets/96459404/30d4bb50-aad8-489f-a7cc-1052034a7dfe',
+    videoUrl: celestialVideo,
     description: '3D N-Body gravity simulation with Barnes-Hut optimization. Visualizes gravitational fields in real-time.',
     projectUrl: 'https://github.com/tran-ethan/celestial-simulator',
     tags: ['Java', 'JavaFX', 'Physics'],
@@ -53,7 +57,7 @@ const PROJECTS: Project[] = [
     year: '2024',
     pos: 0.58,
     icon: <ChessIcon />,
-    videoUrl: '/chessboard.mp4',
+    videoUrl: chessboardVideo,
     description: 'A robotic chessboard that tracks pieces using Hall effect sensors and plays against humans using Stockfish. Features a CoreXY motion system.',
     projectUrl: 'https://git.uwaterloo.ca/b27dai/se101_group_project',
     tags: ['C', 'JS', 'WebSockets', 'Robotics'],
@@ -74,17 +78,6 @@ const PROJECTS: Project[] = [
 const HORIZONTAL_QUERY = '(min-width: 900px) and (min-height: 620px) and (pointer: fine)'
 
 function Station({ p }: { p: Project }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) video.play().catch(() => {})
-      else video.pause()
-    })
-    observer.observe(video)
-    return () => { observer.disconnect(); video.pause() }
-  }, [])
   return (
     <div
       className="tl-station"
@@ -98,13 +91,8 @@ function Station({ p }: { p: Project }) {
       <span className="tl-node" aria-hidden="true" />
       <span className="tl-connector-down" aria-hidden="true" />
       <div className="tl-card">
-        <div className="tl-card-media">
-          {p.videoUrl ? (
-            <video ref={videoRef} src={p.videoUrl} loop muted playsInline preload="none" />
-          ) : (
-            <img src={p.imageUrl} alt={p.title} loading="lazy" />
-          )}
-        </div>
+        <ProjectMedia key={p.videoUrl??p.imageUrl} className="tl-card-media" title={p.title}
+          src={p.videoUrl??p.imageUrl??''} video={!!p.videoUrl} />
         <p className="tl-card-desc">{p.description}</p>
         <div className="tl-card-tags">
           {p.tags.map(t => <span key={t} className="tech-tag">{t}</span>)}

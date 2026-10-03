@@ -509,6 +509,12 @@ footer p { margin: 0; }
 .tl-station:hover .tl-name, .tl-station:focus-within .tl-name { color: var(--text-main); }
 .tl-card-media { aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--glass-border); background: var(--bg-card); }
 .tl-card-media video, .tl-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.project-media { position: relative; }
+.media-placeholder { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; background: #101715; color: var(--text-dim); font-size: 11px; }
+.media-placeholder.is-loading::before { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg,transparent 20%,rgba(139,218,196,.09) 50%,transparent 80%); animation: media-shimmer 1.4s ease-in-out infinite; }
+.media-placeholder span { position: relative; }
+@keyframes media-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .media-placeholder.is-loading::before { animation: none; } }
 .tl-card-desc { color: var(--text-dim); font-size: 13px; line-height: 1.5; margin: 12px 0; }
 .tl-card-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .tl-end { position: absolute; top: 0; height: 100%; transform: translateX(-50%); }

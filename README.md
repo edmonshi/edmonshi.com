@@ -9,6 +9,7 @@ My personal portfolio website showcasing my journey as a Software Engineering st
 - **Interactive Landing Page** with smooth animations
 - **Scroll-triggered Animations** for the About section
 - **Project Portfolio** with hover effects and tags
+- **Lazy Project Previews** served locally with browser/CDN caching and loading animations
 - **Responsive Design** that works across all devices
 - **Underwater Background** with water shaders and a GPU-animated ASCII betta
 - **Contact Integration** with direct email, GitHub, and LinkedIn links

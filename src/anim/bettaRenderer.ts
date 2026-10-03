@@ -2,8 +2,12 @@ import * as THREE from 'three'
 import {createBettaRig} from './bettaRig'
 import {createBettaMotion, type BettaInput} from './bettaMotion'
 
-const CELL=new THREE.Vector2(6,8)
+const CELL=new THREE.Vector2(4,6)
 const CHARACTERS=' .:-=+*#%@01o'
+// ponytail: high-DPI output gets a 1.5M pixel budget; raise for faster GPUs.
+function pixelRatio(w:number,h:number){
+  return Math.max(1,Math.min(window.devicePixelRatio||1,2,Math.sqrt(1_500_000/(w*h))))
+}
 const POST_VERTEX=`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`
 const POST_FRAGMENT=`
   varying vec2 vUv;
@@ -52,12 +56,12 @@ const POST_FRAGMENT=`
 
 function glyphTexture(){
   const canvas=document.createElement('canvas')
-  canvas.width=CHARACTERS.length*18;canvas.height=24
+  canvas.width=CHARACTERS.length*24;canvas.height=32
   const ctx=canvas.getContext('2d')!
-  ctx.font='20px monospace';ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.textAlign='center'
-  for(let i=0;i<CHARACTERS.length;i++) ctx.fillText(CHARACTERS[i],i*18+9,12)
+  ctx.font='26px monospace';ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.textAlign='center'
+  for(let i=0;i<CHARACTERS.length;i++) ctx.fillText(CHARACTERS[i],i*24+12,16)
   const texture=new THREE.CanvasTexture(canvas)
-  texture.minFilter=texture.magFilter=THREE.NearestFilter
+  texture.minFilter=texture.magFilter=THREE.LinearFilter
   texture.generateMipmaps=false
   return texture
 }
@@ -66,7 +70,7 @@ interface Bubble {x:number;y:number;vx:number;vy:number;birth:number;life:number
 
 export function createBettaRenderer(canvas:HTMLCanvasElement){
   const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false,powerPreference:'low-power'})
-  renderer.setPixelRatio(1);renderer.setClearColor(0x000000,0)
+  renderer.setClearColor(0x000000,0)
   const rig=createBettaRig(),motion=createBettaMotion()
   const scene=new THREE.Scene();scene.add(rig.group)
   const camera=new THREE.OrthographicCamera(-1,1,1,-1,0.1,20)
@@ -92,6 +96,8 @@ export function createBettaRenderer(canvas:HTMLCanvasElement){
     const scale=Math.min(185,w/3.5,h/3.2)
     camera.left=-w/scale/2;camera.right=w/scale/2
     camera.top=h/scale/2;camera.bottom=-h/scale/2;camera.updateProjectionMatrix()
+    // Keep the glyphs sharp on high-DPI screens without enlarging the fish.
+    renderer.setPixelRatio(pixelRatio(w,h))
     renderer.setSize(w,h,false)
     // The 3D pass has one pixel per ASCII cell, not one per screen pixel.
     target.setSize(Math.ceil(w/CELL.x),Math.ceil(h/CELL.y))
@@ -135,7 +141,9 @@ export function createBettaRenderer(canvas:HTMLCanvasElement){
 // This keeps a fish on the page without reviving the old engine or motion.
 export function drawBettaFallback(canvas:HTMLCanvasElement,w:number,h:number){
   const rig=createBettaRig(),ctx=canvas.getContext('2d')!
-  canvas.width=w;canvas.height=h
+  const dpr=pixelRatio(w,h)
+  canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr)
+  ctx.scale(dpr,dpr)
   const sample=document.createElement('canvas');sample.width=w;sample.height=h
   const sc=sample.getContext('2d')!,scale=Math.min(185,w/3.5,h/3.2)
   rig.group.children.forEach(child=>{
@@ -154,8 +162,8 @@ export function drawBettaFallback(canvas:HTMLCanvasElement,w:number,h:number){
     }
   })
   const pixels=sc.getImageData(0,0,w,h).data
-  ctx.font='8px monospace';ctx.textBaseline='middle';ctx.fillStyle='rgba(139,218,196,0.35)'
-  for(let y=0;y<h;y+=8)for(let x=0;x<w;x+=6){
+  ctx.font=`${CELL.y}px monospace`;ctx.textBaseline='middle';ctx.fillStyle='rgba(139,218,196,0.35)'
+  for(let y=0;y<h;y+=CELL.y)for(let x=0;x<w;x+=CELL.x){
     const p=(y*w+x)*4
     if(pixels[p+3]>40 && pixels[p]>20)ctx.fillText(CHARACTERS[Math.min(9,Math.floor(pixels[p]/255*10))],x,y)
   }
