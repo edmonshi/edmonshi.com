@@ -1,6 +1,6 @@
 // Run with Vite on :5180: node scripts/verify-betta-motion.mjs [playwright-module-path]
 // Checks forward travel, articulated turns and straightening at 30/60/120 FPS,
-// moving-only fin activity, idle settling, and interactions.
+// moving-only fin activity, continuous cursor pursuit, idle settling, and interactions.
 const playwrightPath = process.argv[2]
   ?? `${process.env.HOME}/.claude/skills/gstack/node_modules/playwright/index.mjs`
 const { chromium } = await import(playwrightPath)
@@ -90,6 +90,34 @@ try {
           follower.update(1/60,followTime,followInput)
         }
         if(distance()>175 || distance()>before-50) throw Error('Fish does not approach and settle near the moving cursor')
+      }
+      // A slowly moving pointer used to repeatedly toggle swim/rest on arrival.
+      // Cruise speed and stroke cadence should stay steady until deceleration.
+      for(const frameRate of [30,60,120]) for(const pointerSpeed of [0,5,10,25]) {
+        const motion=createBettaMotion()
+        motion.resize(2400,900,185)
+        const input={cursor:{x:900,y:486,speed:0,idleMs:0},section:0,reducedMotion:false,ripples:[]}
+        const previous=motion.pose().position.clone()
+        let previousHover=1,previousPhase=0,stops=0
+        const cruiseSpeeds=[],cruiseCadence=[],arrivalSpeeds=[]
+        for(let frame=0;frame<frameRate*20;frame++) {
+          input.cursor.x=900-pointerSpeed*frame/frameRate
+          const pose=motion.update(1/frameRate,frame*1000/frameRate,input)
+          const speed=pose.position.distanceTo(previous)*frameRate*185
+          if(frame>frameRate*3 && pose.hover>previousHover+0.000001) stops++
+          if(frame>frameRate*3 && frame<frameRate*5) {
+            cruiseSpeeds.push(speed)
+            cruiseCadence.push((pose.phase-previousPhase)*frameRate)
+          }
+          if(frame>frameRate*18) arrivalSpeeds.push(speed)
+          previous.copy(pose.position);previousHover=pose.hover;previousPhase=pose.phase
+        }
+        if(Math.max(...cruiseSpeeds)/Math.min(...cruiseSpeeds)>1.005) throw Error('Cruise speed pulses with the body wave')
+        if(Math.max(...cruiseCadence)/Math.min(...cruiseCadence)>1.005) throw Error('Body wave cadence pulses during steady swimming')
+        if(pointerSpeed>0) {
+          if(stops) throw Error(`Fish repeatedly stops while following a ${pointerSpeed}px/s cursor at ${frameRate} FPS`)
+          if(arrivalSpeeds.some(speed=>Math.abs(speed-pointerSpeed)>pointerSpeed*0.08)) throw Error('Fish cannot smoothly match a slowly moving cursor')
+        } else if(Math.max(...arrivalSpeeds)>0.01) throw Error('Fish keeps restarting after reaching a stationary cursor')
       }
     } finally { Math.random = originalRandom }
     if (idleFrames < 100 || activeFrames < 100) throw Error('Missing rest or active swimming coverage')

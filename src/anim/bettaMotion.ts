@@ -97,18 +97,22 @@ export function createBettaMotion() {
       if(mode==='hover') { mode='swim'; remaining=5+Math.random()*5; chooseDestination(section) }
       else { mode='hover'; remaining=2+Math.random()*3; destination.copy(position) }
     }
-    if(input.cursor.x>-9000 && mode!=='flee') {
+    const followingCursor=input.cursor.x>-9000 && mode!=='flee'
+    const arrivalDistance=followingCursor?0.01:0.22
+    if(followingCursor) {
       // Follow a moving or resting pointer, leaving room for the snout.
       destination.set(mx,my,-0.15)
       desired.copy(destination).sub(position)
       const distance=desired.length()
       if(distance>0) destination.addScaledVector(desired,-Math.min(0.65,distance)/distance)
       clampGoal()
-      mode=position.distanceTo(destination)>0.22?'swim':'hover'
+      // Ease all the way into arrival. A small restart margin avoids toggling
+      // swim/rest every frame as a slowly moving pointer crosses the boundary.
+      mode=position.distanceTo(destination)>(mode==='hover'?0.03:arrivalDistance)?'swim':'hover'
       remaining=7
     }
     const distance=desired.copy(destination).sub(position).length()
-    if(mode==='swim' && distance<0.22) { mode='hover'; remaining=2+Math.random()*2; destination.copy(position) }
+    if(mode==='swim' && distance<arrivalDistance) { mode='hover'; remaining=2+Math.random()*2; destination.copy(position) }
     const swimming=mode!=='hover'
     if(swimming && distance>0.001) {
       desired.normalize()
@@ -134,8 +138,8 @@ export function createBettaMotion() {
     rotation.setFromRotationMatrix(basis)
     const angularRate=cross.crossVectors(previousForward,forward).y/Math.max(dt,0.001)
     turn=THREE.MathUtils.lerp(turn,THREE.MathUtils.clamp(angularRate,-1,1),1-Math.exp(-dt*5))
-    const stroke=Math.pow(Math.max(0,Math.sin(phase)),2)
-    const targetSpeed=swimming?(mode==='flee'?0.90:0.28+0.13*stroke)*Math.min(1,distance/0.55):0
+    // Cruise steadily; the lateral body wave doesn't pulse the travel speed.
+    const targetSpeed=swimming?(mode==='flee'?0.90:0.34)*Math.min(1,distance/0.55):0
     // Ease speed only. Blending velocity vectors retains the old heading and
     // makes the fish slide sideways while its body turns toward the new path.
     swimSpeed=THREE.MathUtils.lerp(swimSpeed,targetSpeed,1-Math.exp(-dt*(swimming?2.2:3.0)))
@@ -174,7 +178,7 @@ export function createBettaMotion() {
       joints[i].set(Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.sin(yaw)*Math.cos(pitch)).applyQuaternion(inverseHead)
     }
     position.addScaledVector(forward,swimSpeed*dt)
-    const targetEffort=swimming?(mode==='flee'?1:0.45+0.35*stroke):0.045
+    const targetEffort=swimming?(mode==='flee'?1:0.60):0.045
     effort=THREE.MathUtils.lerp(effort,targetEffort,1-Math.exp(-dt*4))
     hover=THREE.MathUtils.lerp(hover,swimming?0:1,1-Math.exp(-dt*3))
     phase+=dt*(1.1+effort*7.8)
