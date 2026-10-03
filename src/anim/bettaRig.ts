@@ -38,8 +38,8 @@ const VERTEX = `
     return normalize(mix(boneDirection(i),boneDirection(min(i+1,7)),fract(bone)));
   }
   vec3 backbone(float x) {
-    // Eight fixed-length links follow the head's earlier path directions.
-    // Later joints trail progressively farther behind the head during a turn.
+    // Eight fixed-length links bend progressively behind the head in a turn,
+    // then align with travel as water drag straightens the trailing joints.
     float arc = clamp(0.64-x,0.0,1.29);
     vec3 p = vec3(0.64,0.0,0.0);
     for (int i=0; i<8; i++) {

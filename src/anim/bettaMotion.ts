@@ -23,11 +23,12 @@ export function createBettaMotion() {
   let width=8,height=6,pixelScale=150,initialized=false
   let mode:'hover'|'swim'|'flee'='hover', remaining=1.8
   let phase=0,effort=0.08,turn=0,hover=1
-  let swim=0,travelled=0,swimSpeed=0
+  let swim=0,swimSpeed=0
   let heading=Math.PI-0.18,elevation=0
   const joints=Array.from({length:8},()=>new THREE.Vector3(1,0,0))
   const inverseHead=new THREE.Quaternion()
-  const path=[{distance:-2,heading,elevation},{distance:0,heading,elevation}]
+  const jointHeadings=new Float64Array(8).fill(heading)
+  const jointElevations=new Float64Array(8).fill(elevation)
   let section=0,lastStartle=-Infinity,lastRipple=-Infinity,time=0
 
   function clampGoal() {
@@ -133,19 +134,25 @@ export function createBettaMotion() {
     swimSpeed=THREE.MathUtils.lerp(swimSpeed,targetSpeed,1-Math.exp(-dt*(swimming?2.2:3.0)))
     // Fin activity follows actual travel, including acceleration and coasting.
     swim=THREE.MathUtils.smoothstep(swimSpeed,0.018,0.28)
-    // Each spine link follows the heading at an earlier point along the path.
-    // Distance-based delay keeps the long tail from rotating with the head.
-    travelled+=swimSpeed*dt
-    if(travelled-path[path.length-1].distance>=0.002) path.push({distance:travelled,heading,elevation})
-    while(path.length>2 && path[1].distance<travelled-1.65) path.shift()
+    // Water drag brings each link toward the preceding link and the direction
+    // of travel. The bend propagates down the body, then straightens instead
+    // of leaving the rear half aimed at a distant point on the old path.
+    // Drive this by travel so a stationary fish doesn't turn its body in place.
+    const jointFollow=1-Math.exp(-swimSpeed*dt*28)
+    for(let i=joints.length-1;i>0;i--) {
+      const previous=jointHeadings[i-1]
+      const toTravel=Math.atan2(Math.sin(heading-previous),Math.cos(heading-previous))
+      const target=previous+toTravel*0.15
+      const angle=Math.atan2(Math.sin(target-jointHeadings[i]),Math.cos(target-jointHeadings[i]))
+      jointHeadings[i]+=angle*jointFollow
+      const targetElevation=THREE.MathUtils.lerp(jointElevations[i-1],elevation,0.15)
+      jointElevations[i]=THREE.MathUtils.lerp(jointElevations[i],targetElevation,jointFollow)
+    }
+    jointHeadings[0]=heading
+    jointElevations[0]=elevation
     inverseHead.copy(rotation).invert()
-    let sample=path.length-2
     for(let i=0;i<joints.length;i++) {
-      const target=travelled-(i+0.5)*1.29/8
-      while(sample>0 && path[sample].distance>target) sample--
-      const a=path[sample],b=path[sample+1]
-      const t=THREE.MathUtils.clamp((target-a.distance)/(b.distance-a.distance),0,1)
-      const yaw=THREE.MathUtils.lerp(a.heading,b.heading,t),pitch=THREE.MathUtils.lerp(a.elevation,b.elevation,t)
+      const yaw=jointHeadings[i],pitch=jointElevations[i]
       joints[i].set(Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.sin(yaw)*Math.cos(pitch)).applyQuaternion(inverseHead)
     }
     position.addScaledVector(forward,swimSpeed*dt)

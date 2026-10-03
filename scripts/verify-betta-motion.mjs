@@ -1,5 +1,6 @@
 // Run with Vite on :5180: node scripts/verify-betta-motion.mjs [playwright-module-path]
-// Checks curved turns, moving-only fin activity, idle settling, and interactions.
+// Checks forward travel, articulated turns and straightening at 30/60/120 FPS,
+// moving-only fin activity, idle settling, and interactions.
 const playwrightPath = process.argv[2]
   ?? `${process.env.HOME}/.claude/skills/gstack/node_modules/playwright/index.mjs`
 const { chromium } = await import(playwrightPath)
@@ -11,29 +12,37 @@ try {
     const THREE = await import('/node_modules/.vite/deps/three.js')
     const { createBettaMotion } = await import('/src/anim/bettaMotion.ts')
     const originalRandom = Math.random
-    let cases = 0, idleFrames = 0, activeFrames = 0, maxCurvature = 0, maxTailLag = 0, maxTravelHeadingError = 0
+    let cases = 0, idleFrames = 0, activeFrames = 0, straightFrames = 0
+    let maxCurvature = 0, maxTailLag = 0, maxTravelHeadingError = 0, maxBodyTravelError = 0
     try {
       for (const [w, h, scale] of [[1440, 900, 185], [375, 812, 375 / 3.5]]) {
         for (let seed = 1; seed <= 10; seed++) {
+          const frameRate = [30, 60, 120][seed % 3]
           let randomState = seed
           Math.random = () => { randomState = (randomState * 1664525 + 1013904223) >>> 0; return randomState / 4294967296 }
           const motion = createBettaMotion()
           motion.resize(w, h, scale)
           const input = { cursor: { x: -9999, y: -9999, speed: 0, idleMs: 0 }, section: 0, reducedMotion: false, ripples: [] }
           let lastPosition = motion.pose().position.clone(), lastRotation = motion.pose().rotation.clone()
-          for (let frame = 0; frame < 3600; frame++) {
-            const now = frame * 1000 / 30
-            input.section = Math.floor(frame / 900) % 3
-            if (frame % 600 === 0) {
+          let straightTravel = 0
+          for (let frame = 0; frame < frameRate * 120; frame++) {
+            const now = frame * 1000 / frameRate
+            input.section = Math.floor(frame / (frameRate * 30)) % 3
+            if (frame % (frameRate * 20) === 0) {
               input.cursor = { x: w * 0.6, y: h * 0.45, speed: 1.2, idleMs: 0 }
               input.ripples = [{ x: w * 0.6, y: h * 0.45, birth: now }]
             }
-            if (frame % 600 === 30) input.cursor = { x: w * 0.6, y: h * 0.45, speed: 0, idleMs: 4000 }
-            if (frame % 600 === 180) { input.cursor = { x: -9999, y: -9999, speed: 0, idleMs: 0 }; input.ripples = [] }
-            const pose = motion.update(1 / 30, now, input)
+            if (frame % (frameRate * 20) === frameRate) input.cursor = { x: w * 0.6, y: h * 0.45, speed: 0, idleMs: 4000 }
+            if (frame % (frameRate * 20) === frameRate * 6) { input.cursor = { x: -9999, y: -9999, speed: 0, idleMs: 0 }; input.ripples = [] }
+            const pose = motion.update(1 / frameRate, now, input)
             const movement = pose.position.clone().sub(lastPosition), travel = movement.length()
             const angle = pose.rotation.angleTo(lastRotation)
             maxTailLag = Math.max(maxTailLag, pose.joints[0].angleTo(pose.joints[7]))
+            const bodyDirection = pose.joints.reduce((sum, joint) => sum.add(joint), new THREE.Vector3()).normalize()
+            const bodyTravelError = bodyDirection.angleTo(new THREE.Vector3(1, 0, 0))
+            maxBodyTravelError = Math.max(maxBodyTravelError, bodyTravelError)
+            if (bodyTravelError > 0.35) throw Error(`Body stays sideways to travel: ${bodyTravelError} radians`)
+            if (pose.joints[0].angleTo(pose.joints[7]) > 0.85) throw Error('Tail remains aimed too far along the old path')
             if (![...pose.position.toArray(), ...pose.rotation.toArray(), pose.swim, ...pose.joints.flatMap(joint => joint.toArray())].every(Number.isFinite)) throw Error('Nonfinite pose')
             if (angle > travel * 3.5 + 0.00001) throw Error(`Fish pivots without enough travel: ${angle} radians / ${travel} distance`)
             if (travel > 0.0001) maxCurvature = Math.max(maxCurvature, angle / travel)
@@ -44,11 +53,18 @@ try {
               maxTravelHeadingError = Math.max(maxTravelHeadingError, headingError)
               if (headingError > 0.00001) throw Error(`Fish slides sideways: travel differs from heading by ${headingError} radians`)
             }
-            if (pose.hover > 0.99 && travel < 0.0004) {
+            if (angle < travel * 0.05 + 0.000001 && pose.swim > 0.1) {
+              straightTravel += travel
+              if (straightTravel > 0.7) {
+                if (bodyTravelError > 0.035) throw Error('Body does not straighten after the turn')
+                straightFrames++
+              }
+            } else straightTravel = 0
+            if (pose.hover > 0.99 && travel < 0.012 / frameRate) {
               if (pose.swim !== 0) throw Error('Large fins keep waving at rest')
               idleFrames++
             }
-            if (travel > 0.009 && pose.swim > 0.9) activeFrames++
+            if (travel > 0.27 / frameRate && pose.swim > 0.9) activeFrames++
             if (Math.abs(pose.position.x) > w / scale / 2 || Math.abs(pose.position.y) > h / scale / 2) throw Error('Fish leaves viewport')
             lastPosition.copy(pose.position); lastRotation.copy(pose.rotation)
           }
@@ -62,7 +78,8 @@ try {
     } finally { Math.random = originalRandom }
     if (idleFrames < 100 || activeFrames < 100) throw Error('Missing rest or active swimming coverage')
     if (maxTailLag < 0.5) throw Error('Long body joints all turn together')
-    return { cases, idleFrames, activeFrames, maxCurvature, maxTailLag, maxTravelHeadingError }
+    if (straightFrames < 100) throw Error('Missing straightening coverage')
+    return { cases, frameRates: [30, 60, 120], idleFrames, activeFrames, straightFrames, maxCurvature, maxTailLag, maxTravelHeadingError, maxBodyTravelError }
   })
-  console.log('PASS swimming arcs, fins settle at rest, interaction and reduced motion', result)
+  console.log('PASS forward swimming, joint bending and straightening, resting fins and reduced motion', result)
 } finally { await browser.close() }
