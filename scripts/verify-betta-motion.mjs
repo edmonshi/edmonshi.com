@@ -12,7 +12,7 @@ try {
     const THREE = await import('/node_modules/.vite/deps/three.js')
     const { createBettaMotion } = await import('/src/anim/bettaMotion.ts')
     const originalRandom = Math.random
-    let cases = 0, idleFrames = 0, activeFrames = 0, straightFrames = 0
+    let cases = 0, idleFrames = 0, activeFrames = 0, straightFrames = 0, halfTurnFrames = 0, bentRestFrames = 0
     let maxCurvature = 0, maxTailLag = 0, maxTravelHeadingError = 0, maxBodyTravelError = 0
     try {
       for (const [w, h, scale] of [[1440, 900, 185], [375, 812, 375 / 3.5]]) {
@@ -41,8 +41,8 @@ try {
             const bodyDirection = pose.joints.reduce((sum, joint) => sum.add(joint), new THREE.Vector3()).normalize()
             const bodyTravelError = bodyDirection.angleTo(new THREE.Vector3(1, 0, 0))
             maxBodyTravelError = Math.max(maxBodyTravelError, bodyTravelError)
-            if (bodyTravelError > 0.35) throw Error(`Body stays sideways to travel: ${bodyTravelError} radians`)
-            if (pose.joints[0].angleTo(pose.joints[7]) > 0.85) throw Error('Tail remains aimed too far along the old path')
+            if (angle > travel * 0.8 && pose.joints[0].angleTo(pose.joints[7]) > 1.0) halfTurnFrames++
+            if (pose.swim === 0 && pose.joints[0].angleTo(pose.joints[7]) > 0.7) bentRestFrames++
             if (![...pose.position.toArray(), ...pose.rotation.toArray(), pose.swim, ...pose.joints.flatMap(joint => joint.toArray())].every(Number.isFinite)) throw Error('Nonfinite pose')
             if (angle > travel * 3.5 + 0.00001) throw Error(`Fish pivots without enough travel: ${angle} radians / ${travel} distance`)
             if (travel > 0.0001) maxCurvature = Math.max(maxCurvature, angle / travel)
@@ -55,8 +55,9 @@ try {
             }
             if (angle < travel * 0.05 + 0.000001 && pose.swim > 0.1) {
               straightTravel += travel
-              if (straightTravel > 0.7) {
+              if (straightTravel > 0.85) {
                 if (bodyTravelError > 0.035) throw Error('Body does not straighten after the turn')
+                if (pose.joints.some(joint => joint.angleTo(new THREE.Vector3(1, 0, 0)) > 0.08)) throw Error('Rear joints remain bent during sustained straight travel')
                 straightFrames++
               }
             } else straightTravel = 0
@@ -77,9 +78,10 @@ try {
       }
     } finally { Math.random = originalRandom }
     if (idleFrames < 100 || activeFrames < 100) throw Error('Missing rest or active swimming coverage')
-    if (maxTailLag < 0.5) throw Error('Long body joints all turn together')
+    if (maxTailLag < 1.3 || halfTurnFrames < 100) throw Error('Missing the deeper trailing bend during turns')
+    if (bentRestFrames < 10) throw Error('Fish cannot retain a half-turned body while resting')
     if (straightFrames < 100) throw Error('Missing straightening coverage')
-    return { cases, frameRates: [30, 60, 120], idleFrames, activeFrames, straightFrames, maxCurvature, maxTailLag, maxTravelHeadingError, maxBodyTravelError }
+    return { cases, frameRates: [30, 60, 120], idleFrames, activeFrames, halfTurnFrames, bentRestFrames, straightFrames, maxCurvature, maxTailLag, maxTravelHeadingError, maxBodyTravelError }
   })
   console.log('PASS forward swimming, joint bending and straightening, resting fins and reduced motion', result)
 } finally { await browser.close() }
