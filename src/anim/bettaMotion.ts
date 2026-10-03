@@ -12,7 +12,6 @@ export interface BettaInput {
 // a hovering fish cannot pivot toward its next destination in place.
 export function createBettaMotion() {
   const position=new THREE.Vector3()
-  const velocity=new THREE.Vector3()
   const rotation=new THREE.Quaternion()
   const destination=new THREE.Vector3()
   const forward=new THREE.Vector3(1,0,0)
@@ -21,11 +20,10 @@ export function createBettaMotion() {
   const up=new THREE.Vector3(), lateral=new THREE.Vector3(), cross=new THREE.Vector3()
   const basis=new THREE.Matrix4()
   const worldUp=new THREE.Vector3(0,1,0)
-  const seed=Math.random()*100
   let width=8,height=6,pixelScale=150,initialized=false
   let mode:'hover'|'swim'|'flee'='hover', remaining=1.8
   let phase=0,effort=0.08,turn=0,hover=1
-  let swim=0,travelled=0
+  let swim=0,travelled=0,swimSpeed=0
   let heading=Math.PI-0.18,elevation=0
   const joints=Array.from({length:8},()=>new THREE.Vector3(1,0,0))
   const inverseHead=new THREE.Quaternion()
@@ -115,7 +113,7 @@ export function createBettaMotion() {
       const angle=Math.atan2(Math.sin(targetHeading-heading),Math.cos(targetHeading-heading))
       // Limit curvature rather than turning at a fixed angular speed. Starting
       // from rest accelerates forward first; coasting produces a broad arc.
-      const travel=velocity.length()*dt
+      const travel=swimSpeed*dt
       const rate=travel*(mode==='flee'?2.6:2.1)
       heading+=THREE.MathUtils.clamp(angle,-rate,rate)
       elevation+=THREE.MathUtils.clamp(targetElevation-elevation,-travel*0.9,travel*0.9)
@@ -129,14 +127,15 @@ export function createBettaMotion() {
     const angularRate=cross.crossVectors(previousForward,forward).y/Math.max(dt,0.001)
     turn=THREE.MathUtils.lerp(turn,THREE.MathUtils.clamp(angularRate,-1,1),1-Math.exp(-dt*5))
     const stroke=Math.pow(Math.max(0,Math.sin(phase)),2)
-    const speed=swimming?(mode==='flee'?0.90:0.28+0.13*stroke)*Math.min(1,distance/0.55):0
-    velocity.lerp(lateral.copy(forward).multiplyScalar(speed),1-Math.exp(-dt*(swimming?2.2:3.0)))
+    const targetSpeed=swimming?(mode==='flee'?0.90:0.28+0.13*stroke)*Math.min(1,distance/0.55):0
+    // Ease speed only. Blending velocity vectors retains the old heading and
+    // makes the fish slide sideways while its body turns toward the new path.
+    swimSpeed=THREE.MathUtils.lerp(swimSpeed,targetSpeed,1-Math.exp(-dt*(swimming?2.2:3.0)))
     // Fin activity follows actual travel, including acceleration and coasting.
-    // Ignore the tiny hover drift so the large fins settle completely at rest.
-    swim=THREE.MathUtils.smoothstep(velocity.length(),0.018,0.28)
+    swim=THREE.MathUtils.smoothstep(swimSpeed,0.018,0.28)
     // Each spine link follows the heading at an earlier point along the path.
     // Distance-based delay keeps the long tail from rotating with the head.
-    travelled+=velocity.length()*dt
+    travelled+=swimSpeed*dt
     if(travelled-path[path.length-1].distance>=0.002) path.push({distance:travelled,heading,elevation})
     while(path.length>2 && path[1].distance<travelled-1.65) path.shift()
     inverseHead.copy(rotation).invert()
@@ -149,8 +148,7 @@ export function createBettaMotion() {
       const yaw=THREE.MathUtils.lerp(a.heading,b.heading,t),pitch=THREE.MathUtils.lerp(a.elevation,b.elevation,t)
       joints[i].set(Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.sin(yaw)*Math.cos(pitch)).applyQuaternion(inverseHead)
     }
-    position.addScaledVector(velocity,dt)
-    if(!swimming) position.y+=Math.sin(time*1.7+seed)*dt*0.003
+    position.addScaledVector(forward,swimSpeed*dt)
     const targetEffort=swimming?(mode==='flee'?1:0.45+0.35*stroke):0.045
     effort=THREE.MathUtils.lerp(effort,targetEffort,1-Math.exp(-dt*4))
     hover=THREE.MathUtils.lerp(hover,swimming?0:1,1-Math.exp(-dt*3))

@@ -11,7 +11,7 @@ try {
     const THREE = await import('/node_modules/.vite/deps/three.js')
     const { createBettaMotion } = await import('/src/anim/bettaMotion.ts')
     const originalRandom = Math.random
-    let cases = 0, idleFrames = 0, activeFrames = 0, maxCurvature = 0, maxTailLag = 0
+    let cases = 0, idleFrames = 0, activeFrames = 0, maxCurvature = 0, maxTailLag = 0, maxTravelHeadingError = 0
     try {
       for (const [w, h, scale] of [[1440, 900, 185], [375, 812, 375 / 3.5]]) {
         for (let seed = 1; seed <= 10; seed++) {
@@ -38,7 +38,12 @@ try {
             if (angle > travel * 3.5 + 0.00001) throw Error(`Fish pivots without enough travel: ${angle} radians / ${travel} distance`)
             if (travel > 0.0001) maxCurvature = Math.max(maxCurvature, angle / travel)
             if (new THREE.Vector3(0, 1, 0).applyQuaternion(pose.rotation).y < 0.9) throw Error('Excessive pitch or roll')
-            if (pose.effort > 0.3 && travel > 0.002 && new THREE.Vector3(1, 0, 0).applyQuaternion(pose.rotation).dot(movement.normalize()) < 0) throw Error('Backward swimming')
+            if (travel > 0.000001) {
+              const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(pose.rotation)
+              const headingError = forward.angleTo(movement.clone().normalize())
+              maxTravelHeadingError = Math.max(maxTravelHeadingError, headingError)
+              if (headingError > 0.00001) throw Error(`Fish slides sideways: travel differs from heading by ${headingError} radians`)
+            }
             if (pose.hover > 0.99 && travel < 0.0004) {
               if (pose.swim !== 0) throw Error('Large fins keep waving at rest')
               idleFrames++
@@ -57,7 +62,7 @@ try {
     } finally { Math.random = originalRandom }
     if (idleFrames < 100 || activeFrames < 100) throw Error('Missing rest or active swimming coverage')
     if (maxTailLag < 0.5) throw Error('Long body joints all turn together')
-    return { cases, idleFrames, activeFrames, maxCurvature, maxTailLag }
+    return { cases, idleFrames, activeFrames, maxCurvature, maxTailLag, maxTravelHeadingError }
   })
   console.log('PASS swimming arcs, fins settle at rest, interaction and reduced motion', result)
 } finally { await browser.close() }
