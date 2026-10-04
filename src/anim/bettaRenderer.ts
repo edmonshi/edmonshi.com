@@ -78,12 +78,8 @@ export function createBettaRenderer(canvas:HTMLCanvasElement){
     ctx.clearRect(0,0,width,height);ctx.globalAlpha=1
     ctx.drawImage(background,0,0,background.width,background.height,0,0,width,height)
     if(input.cursor.x>-9000)drawField(input.cursor.x,input.cursor.y,75,d=>Math.max(0,1-d/75)*0.045)
-    if(!input.reducedMotion)for(const ripple of input.ripples){
-      const age=(now-ripple.birth)/1000
-      if(age<0||age>=4)continue
-      const radius=age*60,thickness=14+age*9
-      drawField(ripple.x,ripple.y,radius+thickness,d=>Math.max(0,1-Math.abs(d-radius)/thickness)*Math.pow(1-age/4,2)*0.14)
-    }
+    // WaterScene renders click ripples on the GPU. Redrawing their growing
+    // rings as thousands of native glyphs here made repeated clicks lag.
     if(!input.reducedMotion && input.cursor.x>-9000 && input.cursor.speed>0.25 && bubbles.length<24 && now-lastBubble>90){
       lastBubble=now
       bubbles.push({x:input.cursor.x,y:input.cursor.y,vx:(Math.random()-0.5)*10,vy:22+Math.random()*18,birth:now,life:1400+Math.random()*500})
