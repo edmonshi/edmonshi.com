@@ -152,7 +152,7 @@ const FRAGMENT = `
       shade = (0.38+0.50*light)*ribs;
       alpha = mix(0.65,0.46,vFlex);
     }
-    if (uKind > 7.5) { shade = uKind < 8.5 ? 1.0 : 0.015; alpha = 1.0; }
+    if (uKind > 7.5) { shade = 0.0; alpha = 1.0; }
     gl_FragColor = vec4(vec3(0.54,0.86,0.76)*shade,alpha);
   }
 `
@@ -270,10 +270,6 @@ export function createBettaRig():BettaRig {
     eye.scale(1,1,0.30)
     eye.translate(0.46,0.045,side*0.078)
     add(rigidAttributes(eye),8)
-    const pupil=new THREE.SphereGeometry(0.013,10,6)
-    pupil.scale(1,1,0.20)
-    pupil.translate(0.463,0.045,side*0.085)
-    add(rigidAttributes(pupil),9)
     const gillPoints=[]
     for(let i=0;i<=12;i++) {
       const a=-1.2+i/12*2.4

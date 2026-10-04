@@ -123,7 +123,7 @@ export function drawBettaFallback(canvas:HTMLCanvasElement,w:number,h:number){
     const mesh=child as THREE.Mesh<THREE.BufferGeometry,THREE.ShaderMaterial>
     const position=mesh.geometry.getAttribute('position'),index=mesh.geometry.index
     const kind=mesh.material.uniforms.uKind.value as number
-    sc.fillStyle=kind>=9?'#000':kind===0?'#ddd':'#aaa';sc.globalAlpha=kind>0 && kind<8?0.5:1
+    sc.fillStyle=kind>=8?'#000':kind===0?'#ddd':'#aaa';sc.globalAlpha=kind>0 && kind<8?0.5:1
     if(!index)return
     for(let i=0;i<index.count;i+=3){
       sc.beginPath()
