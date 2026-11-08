@@ -105,15 +105,22 @@ try {
           const pose=motion.update(1/frameRate,frame*1000/frameRate,input)
           const speed=pose.position.distanceTo(previous)*frameRate*185
           if(frame>frameRate*3 && pose.hover>previousHover+0.000001) stops++
-          if(frame>frameRate*3 && frame<frameRate*5) {
+          // Record the whole approach; a pulsing stroke shows up as repeated rise/fall.
+          if(frame>0 && frame<frameRate*12) {
             cruiseSpeeds.push(speed)
             cruiseCadence.push((pose.phase-previousPhase)*frameRate)
           }
           if(frame>frameRate*18) arrivalSpeeds.push(speed)
           previous.copy(pose.position);previousHover=pose.hover;previousPhase=pose.phase
         }
-        if(Math.max(...cruiseSpeeds)/Math.min(...cruiseSpeeds)>1.005) throw Error('Cruise speed pulses with the body wave')
-        if(Math.max(...cruiseCadence)/Math.min(...cruiseCadence)>1.005) throw Error('Body wave cadence pulses during steady swimming')
+        // Speed-agnostic: a steady stroke rises, plateaus and falls once per approach.
+        // Tolerance ignores float noise and slow pointer drift, not a per-stroke pulse.
+        const reversals=series=>{let n=0,dir=0;const top=Math.max(...series)
+          for(let i=1;i<series.length;i++){const d=series[i]-series[i-1];if(Math.abs(d)<top*0.002)continue
+            const s=Math.sign(d);if(dir&&s!==dir)n++;dir=s}
+          return n}
+        if(reversals(cruiseSpeeds)>2) throw Error('Cruise speed pulses with the body wave')
+        if(reversals(cruiseCadence)>2) throw Error('Body wave cadence pulses during steady swimming')
         if(pointerSpeed>0) {
           if(stops) throw Error(`Fish repeatedly stops while following a ${pointerSpeed}px/s cursor at ${frameRate} FPS`)
           if(arrivalSpeeds.some(speed=>Math.abs(speed-pointerSpeed)>pointerSpeed*0.08)) throw Error('Fish cannot smoothly match a slowly moving cursor')

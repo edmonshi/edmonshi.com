@@ -72,6 +72,11 @@ export function createBettaRenderer(canvas:HTMLCanvasElement){
   function frame(now:number,dt:number,input:BettaInput){
     const pose=motion.update(dt,now,input)
     rig.group.position.copy(pose.position);rig.group.quaternion.copy(pose.rotation)
+    // Visual-only buoyancy: a resting betta bobs and nods while its pectorals scull.
+    const bob=input.reducedMotion?0:pose.hover,t=now/1000
+    rig.group.position.y+=Math.sin(t*1.9)*0.028*bob
+    rig.group.position.x+=Math.sin(t*0.8+1.3)*0.018*bob
+    rig.group.rotateZ(Math.sin(t*1.9-0.6)*0.035*bob)
     rig.animate(pose.time,pose.phase,pose.effort,pose.turn,pose.swim,pose.joints)
     renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera)
     renderer.readRenderTargetPixels(target,0,0,cols,rows,pixels)

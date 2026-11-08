@@ -1,6 +1,6 @@
 // src/anim/pond.ts
 // Shared "pond" state — written by global listeners, read every frame by the
-// WebGL water layer and the ASCII fish. Plain module: no React, no subscribers.
+// ASCII fish. Plain module: no React, no subscribers.
 
 export interface PondRipple { x: number; y: number; birth: number }
 
@@ -8,12 +8,10 @@ export const RIPPLE_LIFE_S = 5
 
 export const pond = {
   cursor: { x: -9999, y: -9999, speed: 0, idleMs: 0 }, // speed in px/ms (smoothed)
-  scroll: 0,                 // 0..1 through the whole page
-  section: 0,                // 0 home, 1 about, 2 portfolio
+  section: 0,                // fish destination anchor; single-screen page
   ripples: [] as PondRipple[],
   isTouch: false,
   reducedMotion: false,
-  scrolling: false,         // true while the page is actively scrolling
 }
 
 let lastX = -9999, lastY = -9999, lastT = 0
@@ -48,41 +46,15 @@ export function initPond(): () => void {
     pond.ripples.push({ x: e.clientX, y: e.clientY, birth: performance.now() })
     if (pond.ripples.length > 16) pond.ripples.shift()
   }
-  // Flag active scrolling so the canvas/WebGL layers can throttle themselves and
-  // hand the frame budget to the scroll while the page is moving.
-  let scrollIdle: ReturnType<typeof setTimeout> | undefined
-  const onScroll = () => {
-    const max = document.documentElement.scrollHeight - window.innerHeight
-    pond.scroll = max > 0 ? Math.min(window.scrollY / max, 1) : 0
-    pond.scrolling = true
-    clearTimeout(scrollIdle)
-    scrollIdle = setTimeout(() => { pond.scrolling = false }, 140)
-  }
-
-  const io = new IntersectionObserver(entries => {
-    for (const en of entries) {
-      if (en.isIntersecting) pond.section = ['home', 'about', 'portfolio'].indexOf(en.target.id)
-    }
-  }, { threshold: 0.5 })
-  for (const id of ['home', 'about', 'portfolio']) {
-    const el = document.getElementById(id)
-    if (el) io.observe(el)
-  }
-
   window.addEventListener('pointermove', onMove)
   document.documentElement.addEventListener('pointerleave', onLeave)
   window.addEventListener('pointerdown', onDown)
-  window.addEventListener('scroll', onScroll, { passive: true })
-  onScroll()
 
   return () => {
-    clearTimeout(scrollIdle)
     rmq.removeEventListener('change', onRmq)
-    io.disconnect()
     window.removeEventListener('pointermove', onMove)
     document.documentElement.removeEventListener('pointerleave', onLeave)
     window.removeEventListener('pointerdown', onDown)
-    window.removeEventListener('scroll', onScroll)
   }
 }
 

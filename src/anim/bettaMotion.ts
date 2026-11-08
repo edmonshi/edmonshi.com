@@ -10,6 +10,10 @@ export interface BettaInput {
 // Movement is expressed in world space, independent of the camera or fin rig.
 // Turns follow curved swimming paths. Angular changes require forward travel;
 // a hovering fish cannot pivot toward its next destination in place.
+// Dorsal/anal fins reach ±0.93 units from the spine (rig rest bbox). Goals keep
+// the whole fish inside the frame, not just its centre.
+const FIN_Y=0.95
+
 export function createBettaMotion() {
   const position=new THREE.Vector3()
   const rotation=new THREE.Quaternion()
@@ -32,10 +36,14 @@ export function createBettaMotion() {
   const path=[{distance:-2,heading,elevation},{distance:0,heading,elevation}]
   const straightDirection=new THREE.Vector3()
   let section=0,lastRipple=-Infinity,time=0
+  // Each wander bout picks its own pace; a far cursor sets pursuit urgency once,
+  // so speed stays steady within a bout instead of tracking distance per frame.
+  let cruise=0.34,urgency=0,wasFollowing=false
+  const lastGoal=new THREE.Vector3()
 
   function clampGoal() {
     const mx=Math.max(0.15,width/2-Math.min(1.65,width*0.46))
-    const my=Math.max(0.15,height/2-1.20)
+    const my=Math.max(0.15,height/2-FIN_Y)
     destination.x=THREE.MathUtils.clamp(destination.x,-mx,mx)
     destination.y=THREE.MathUtils.clamp(destination.y,-my,my)
     destination.z=THREE.MathUtils.clamp(destination.z,-0.75,0.35)
@@ -52,6 +60,7 @@ export function createBettaMotion() {
     // Encourage an actual swimming bout rather than jitter around one point.
     if(Math.abs(destination.x-position.x)<0.6) destination.x=position.x+(position.x>0?-1:1)*1.2
     clampGoal()
+    cruise=0.24+Math.random()*0.26
   }
 
   function resize(w:number,h:number,scale:number) {
@@ -67,7 +76,8 @@ export function createBettaMotion() {
     }
     const margin=Math.min(1.65,width*0.46)
     position.x=THREE.MathUtils.clamp(position.x,-width/2+margin,width/2-margin)
-    position.y=THREE.MathUtils.clamp(position.y,-height*0.32,height*0.32)
+    const my=Math.max(0.15,height/2-FIN_Y)
+    position.y=THREE.MathUtils.clamp(position.y,-my,my)
     clampGoal()
   }
 
@@ -76,6 +86,8 @@ export function createBettaMotion() {
     const distance=Math.hypot(dx,dy)||1
     destination.set(position.x+dx/distance*1.8,position.y+dy/distance*0.9,position.z-0.15)
     clampGoal(); mode='flee'; remaining=1.0
+    // Startle burst: snap to speed at once, then drag bleeds it off.
+    swimSpeed=Math.max(swimSpeed,1.6)
   }
 
   function update(dt:number,now:number,input:BettaInput) {
@@ -106,11 +118,16 @@ export function createBettaMotion() {
       const distance=desired.length()
       if(distance>0) destination.addScaledVector(desired,-Math.min(0.65,distance)/distance)
       clampGoal()
+      // New pursuit or a big cursor jump: the farther the goal, the faster it goes.
+      if(!wasFollowing || destination.distanceTo(lastGoal)>0.5)
+        urgency=THREE.MathUtils.clamp((position.distanceTo(destination)-0.6)/2.0,0,1)
+      lastGoal.copy(destination)
       // Ease all the way into arrival. A small restart margin avoids toggling
       // swim/rest every frame as a slowly moving pointer crosses the boundary.
       mode=position.distanceTo(destination)>(mode==='hover'?0.03:arrivalDistance)?'swim':'hover'
       remaining=7
     }
+    wasFollowing=followingCursor
     const distance=desired.copy(destination).sub(position).length()
     if(mode==='swim' && distance<arrivalDistance) { mode='hover'; remaining=2+Math.random()*2; destination.copy(position) }
     const swimming=mode!=='hover'
@@ -139,7 +156,10 @@ export function createBettaMotion() {
     const angularRate=cross.crossVectors(previousForward,forward).y/Math.max(dt,0.001)
     turn=THREE.MathUtils.lerp(turn,THREE.MathUtils.clamp(angularRate,-1,1),1-Math.exp(-dt*5))
     // Cruise steadily; the lateral body wave doesn't pulse the travel speed.
-    const targetSpeed=swimming?(mode==='flee'?0.90:0.34)*Math.min(1,distance/0.55):0
+    const pace=mode==='flee'?0.90:followingCursor?0.34+urgency*0.46:cruise
+    // Sprint only while far: the close-in approach keeps the original 0.34 gain,
+    // so a faster fish still settles on (and tracks) the cursor without toggling.
+    const targetSpeed=!swimming?0:mode==='flee'?pace*Math.min(1,distance/0.55):Math.min(pace,0.34*distance/0.55)
     // Ease speed only. Blending velocity vectors retains the old heading and
     // makes the fish slide sideways while its body turns toward the new path.
     swimSpeed=THREE.MathUtils.lerp(swimSpeed,targetSpeed,1-Math.exp(-dt*(swimming?2.2:3.0)))
