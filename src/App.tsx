@@ -11,6 +11,7 @@ const links = [
   ["email", "mailto:edmonshi0614@gmail.com"],
   ["github", "https://www.github.com/edmonshi/"],
   ["linkedin", "https://www.linkedin.com/in/edmonshi/"],
+  ["x", "https://x.com/edemonshi"],
 ];
 
 const TABS = ["about", "experience", "projects"] as const;
