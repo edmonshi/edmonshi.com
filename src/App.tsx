@@ -24,7 +24,7 @@ const App: React.FC = () => {
     <main className="card">
       <figure className="plate">
         {SHOW_FISH && <Suspense fallback={null}><BettaScene /></Suspense>}
-        <span className="stamp" aria-hidden="true">BETTA SPLENDENS · 43.47N 80.54W</span>
+        <span className="stamp" aria-hidden="true">43.47N 80.54W</span>
       </figure>
 
       <div className="intro">
